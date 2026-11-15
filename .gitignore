@@ -1,0 +1,27 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual Environments
+.venv/
+env/
+venv/
+ENV/
+
+# Environment Variables
+.env
+
+# Local Caches & Session Data
+data/*.db
+data/web_sessions.json
+data/.*_cache*
+data/.telemetry_stats.json
+*.tmp
+
+# IDE & OS
+.vscode/*
+!.vscode/settings.json
+.DS_Store
+Thumbs.db
+

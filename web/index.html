@@ -1,0 +1,262 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SecureDoc AI</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+<!-- Global Hidden File Input -->
+<input type="file" id="global-file-input" style="display:none" accept=".pdf,.docx,.txt,.csv,.md">
+
+
+<!-- ===== THẨM ĐỊNH TÀI LIỆU (index.html#audit) ===== -->
+<div id="audit" class="view view-audit">
+<div class="s55">
+<div class="split s56">
+
+<aside class="side s57 is-narrow" id="audit-sidebar">
+<div class="sky s58" aria-hidden="true"></div>
+<div class="met s59" aria-hidden="true"></div><div class="met s60" aria-hidden="true"></div>
+
+<!-- NARROW VIEW (76px) -->
+<div class="side-content-narrow">
+  <button class="ib audit-logo-btn btn-side-expand" id="btn-toggle-audit-side" title="Mở rộng thanh bên" aria-label="Mở rộng thanh bên">
+    <span class="logo-normal">
+      <svg width="36" height="36" viewBox="0 0 64 64" aria-hidden="true" class="s61"><defs><linearGradient id="gi-audit-narrow" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFFFFF"/><stop offset=".5" stop-color="#9CC3FF"/><stop offset="1" stop-color="#4D88FF"/></linearGradient></defs><path d="M28 10Q30 34 54 36Q30 38 28 62Q26 38 2 36Q26 34 28 10Z" fill="url(#gi-audit-narrow)"/><path d="M28 10Q30 34 54 36Q30 38 28 62Q26 38 2 36Q26 34 28 10Z" fill="#fff" transform="translate(28 36) scale(.42) translate(-28 -36)"/><path d="M50 5Q51.3 12.7 59 14Q51.3 15.3 50 23Q48.7 15.3 41 14Q48.7 12.7 50 5Z" fill="url(#gi-audit-narrow)"/></svg>
+    </span>
+    <span class="logo-hover-icon">
+      <svg class="i" viewBox="0 0 24 24" aria-hidden="true" width="22" height="22" stroke="currentColor" fill="none" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M9 4v16"/></svg>
+    </span>
+  </button>
+  <a href="#home" class="ib s62" id="btn-audit-new" title="Cuộc trò chuyện mới (New Chat)" aria-label="Bố cục New Chat"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></a>
+  <button class="ib" id="btn-audit-search" title="Tìm kiếm" aria-label="Search"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg></button>
+  <button class="ib s63" id="btn-audit-pinned" title="Dự án đã ghim" aria-label="Pinned Projects"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h7l4 4v14H7zM14 3v4h4"/></svg></button>
+</div>
+
+<!-- FULL WIDE VIEW (284px) - Bố cục bên trái New Chat đầy đủ -->
+<div class="side-content-wide">
+  <div class="s9">
+    <a href="#home" class="s10 brand-logo-link" id="audit-brand-logo" title="Về trang chủ SecureDoc AI"><svg width="40" height="40" viewBox="0 0 64 64" role="img" aria-label="SecureDoc AI" class="s11"><defs><linearGradient id="gi-audit-wide" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFFFFF"/><stop offset=".5" stop-color="#9CC3FF"/><stop offset="1" stop-color="#4D88FF"/></linearGradient></defs><path d="M28 10Q30 34 54 36Q30 38 28 62Q26 38 2 36Q26 34 28 10Z" fill="url(#gi-audit-wide)"/><path d="M28 10Q30 34 54 36Q30 38 28 62Q26 38 2 36Q26 34 28 10Z" fill="#fff" transform="translate(28 36) scale(.42) translate(-28 -36)"/><path d="M50 5Q51.3 12.7 59 14Q51.3 15.3 50 23Q48.7 15.3 41 14Q48.7 12.7 50 5Z" fill="url(#gi-audit-wide)"/></svg>SecureDoc<span class="s12">&nbsp;AI</span></a>
+    <button aria-label="Đóng sidebar" class="s13 btn-side-collapse" id="btn-collapse-audit-side" title="Thu gọn thanh bên"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M9 4v16"/></svg></button>
+  </div>
+  <a href="#home" class="s14 btn-full-new" id="btn-audit-full-new" style="text-decoration:none;"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>New Conversation</a>
+  <button class="nav s15" id="btn-audit-full-search"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>Search</button>
+  <div class="lbl">Pinned Projects</div>
+  <div id="audit-pinned-list" class="pinned-list-container">
+    <button class="nav"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h7l4 4v14H7zM14 3v4h4"/></svg>HĐ thuê văn phòng Q4</button>
+    <button class="nav"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h7l4 4v14H7zM14 3v4h4"/></svg>HĐ cung cấp phần mềm</button>
+    <button class="nav"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h7l4 4v14H7zM14 3v4h4"/></svg>NDA đối tác Nhật Bản</button>
+  </div>
+  <div class="s16" style="flex:1"></div>
+  <div class="s21"><span class="s22">NA</span><span class="s20"><b>Nguyễn An</b><span class="s23">an@securedoc.ai</span></span><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></div>
+</div>
+</aside>
+
+<section class="s64">
+<header class="s65">
+<span class="chip s66"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h7l4 4v14H7zM14 3v4h4"/></svg><span id="audit-doc-name">HD_ThueVanPhong_Q4.docx</span></span><span class="s67"></span>
+<div style="position:relative;display:inline-block">
+  <button class="chip s66" id="audit-model-btn"><span id="audit-model-label">Gemini 3.5 Flash</span><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
+  <div id="audit-model-menu" class="model-dropdown-menu" style="display:none;position:absolute;top:calc(100% + 8px);right:0;background:rgba(255,255,255,0.95);backdrop-filter:blur(14px);border-radius:14px;box-shadow:0 10px 30px rgba(0,0,0,0.18);border:1px solid #E6EBF7;padding:6px;min-width:180px;z-index:9999;"></div>
+</div>
+</header>
+<div class="s68">
+<div class="s69" id="audit-first-user-msg">Thẩm định rủi ro hợp đồng này giúp tôi (Audit Risk).</div>
+<div class="card s70" id="audit-pii-card"><svg class="i s71" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l7 3v5c0 5-3.5 8.5-7 10-3.5-1.5-7-5-7-10V6z"/></svg><div><b id="audit-pii-summary">PII Guard đã ẩn 7 thông tin nhạy cảm</b> trước khi gửi AI<br><span id="audit-pii-tokens"><span class="pii">[PHONE_01]</span> <span class="pii">[ID_01]</span> <span class="pii">[EMAIL_01]</span> <span class="pii">[BANK_01]</span> <span class="s72">+3</span></span></div></div>
+<div class="card s73">
+<p class="h">Executive Summary</p>
+<div id="audit-exec-summary">Hợp đồng thuê văn phòng 24 tháng giữa Bên A (cho thuê) và Bên B. Phần lớn điều khoản tiêu chuẩn, nhưng có <b>2 điều khoản bất lợi nghiêm trọng</b> cho Bên B về phạt vi phạm và chấm dứt đơn phương.</div>
+<div class="s74">
+<div class="s75"><div class="s76" id="count-high">3</div><div class="s77">Rủi ro Cao</div></div>
+<div class="s78"><div class="s76" id="count-med">5</div><div class="s77">Trung bình</div></div>
+<div class="s79"><div class="s76" id="count-low">8</div><div class="s77">Thấp</div></div></div>
+<div id="audit-rec-text">Điều 8 cho phép Bên A chấm dứt hợp đồng mà không cần thông báo trước. Tôi đề xuất rút ngắn mức phạt và bổ sung quyền khắc phục trong 30 ngày</div><span class="s80 cursor-blink" id="audit-cursor" style="display:none"></span></div>
+<div id="audit-extra-messages" style="display:flex;flex-direction:column;gap:12px;"></div>
+</div>
+<div class="s81">
+<div class="s82"><button class="chip quick-chip" data-prompt="Thẩm định rủi ro hợp đồng, chấm điểm từng điều khoản và đề xuất sửa đổi.">Audit Risk</button><button class="chip quick-chip" data-prompt="Đối chiếu điều khoản hợp đồng với quy định pháp luật hiện hành.">Legal Check</button><button class="chip quick-chip" data-prompt="Nghiên cứu sâu các kịch bản đàm phán hợp đồng thương mại.">Deep Research</button></div>
+<div class="card s83"><input type="text" id="audit-input" class="s84" placeholder="Hỏi sâu hơn về Điều 5…" style="border:none;outline:none;background:transparent;width:100%;font-family:inherit;font-size:14px;color:#0F2147;"><button aria-label="Đính kèm" class="ib btn-attach-trigger" id="audit-attach-btn"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 11l-8.5 8.5a5 5 0 01-7-7L14 4a3.5 3.5 0 015 5l-8.5 8.5a2 2 0 01-3-3L15 7"/></svg></button><button aria-label="Gửi" class="s85" id="audit-send-btn"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12l15-8-6 16-2-7z"/></svg></button></div></div>
+</section>
+
+<!-- Draggable Splitter Resizer -->
+<div class="split-divider" id="audit-resizer" title="Kéo sang trái/phải để phân chia độ rộng 2 tab (Double click để đặt lại mặc định)" role="separator" aria-orientation="vertical">
+  <div class="split-divider-handle"></div>
+</div>
+
+<section class="s86">
+<header class="s87"><h2 class="s88">Live Audit Canvas</h2>
+<button class="s89" id="btn-export-docx"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11M7 11l5 5 5-5M5 20h14"/></svg>Export .docx</button></header>
+<div class="card s90">
+<svg width="104" height="104" viewBox="0 0 104 104" role="img" aria-label="Risk Score 72 trên 100"><circle cx="52" cy="52" r="42" fill="none" stroke="#E6EBF7" stroke-width="10"/><circle id="audit-gauge-circle" cx="52" cy="52" r="42" fill="none" stroke="#C2410C" stroke-width="10" stroke-linecap="round" stroke-dasharray="190 264" transform="rotate(-90 52 52)"/><text id="audit-gauge-score" x="52" y="58" text-anchor="middle" font-size="26" font-weight="700" fill="#0F2147" font-family="Inter">72</text></svg>
+<div><p class="h s91">Risk Score / 100</p><div class="s92" id="audit-risk-desc">Rủi ro pháp lý cao</div><div class="s93" id="audit-risk-sub">16 điều khoản được rà soát · cần sửa 3 điều khoản trước khi ký</div></div></div>
+<div class="card s94">
+<div class="row s95"><span>Điều</span><span>Nội dung</span><span>Mức độ</span><span>Hành động</span></div>
+<div id="audit-clause-rows">
+<div class="row"><b>Điều 5</b><span>Phạt vi phạm 30% giá trị HĐ</span><span><span class="tag hi">Cao</span></span><span class="s96">Đề xuất sửa</span></div>
+<div class="row"><b>Điều 8</b><span>Chấm dứt đơn phương không báo trước</span><span><span class="tag hi">Cao</span></span><span class="s96">Đề xuất sửa</span></div>
+<div class="row"><b>Điều 3</b><span>Điều chỉnh giá thuê hằng năm</span><span><span class="tag md">Trung bình</span></span><span class="s72">Cần xem xét</span></div>
+<div class="row"><b>Điều 12</b><span>Giải quyết tranh chấp tại Tòa án</span><span><span class="tag lo">Thấp</span></span><span class="s72">Chấp nhận</span></div>
+</div></div>
+<div class="card"><p class="h" id="audit-quote-title">Quote · Điều 5.2</p><div class="s97" id="audit-quote-body">“Bên B vi phạm bất kỳ nghĩa vụ nào sẽ chịu phạt <b>30%</b> tổng giá trị hợp đồng, không phụ thuộc mức thiệt hại thực tế.”</div></div>
+<div class="card"><p class="h">Legal Redline Diff · Bản gốc → Bản sửa</p><div class="s98" id="audit-redline-body">Bên B vi phạm nghĩa vụ sẽ chịu phạt <del class="s99">30% tổng giá trị hợp đồng, không phụ thuộc thiệt hại thực tế</del> <ins class="s100">tối đa 8% giá trị phần nghĩa vụ bị vi phạm, sau 30 ngày không khắc phục</ins>.</div></div>
+
+<!-- Ma trận 3 Kịch bản Đàm phán (Scenario Matrix) -->
+<div class="card s94" id="audit-scenarios-card">
+  <p class="h">Ma trận 3 Kịch bản Đàm phán (Scenario Matrix)</p>
+  <div class="scenario-grid">
+    <div class="scenario-item item-aggressive" id="scenario-aggressive">
+      <div class="scenario-badge badge-red">🔴 Thế Áp Đảo</div>
+      <div class="scenario-title">Cứng rắn</div>
+      <div class="scenario-desc" id="scenario-aggressive-text">Đòi xóa bỏ hoàn toàn điều khoản phạt và siết chặt chế tài đối tác.</div>
+      <button class="scenario-apply-btn" data-scenario="aggressive">Soạn theo kịch bản này ↗</button>
+    </div>
+    <div class="scenario-item item-balanced" id="scenario-balanced">
+      <div class="scenario-badge badge-yellow">🟡 Win - Win</div>
+      <div class="scenario-title">Cân bằng</div>
+      <div class="scenario-desc" id="scenario-balanced-text">Đưa về trần 8% theo Điều 301 LTM và ân hạn 30 ngày khắc phục.</div>
+      <button class="scenario-apply-btn" data-scenario="balanced">Soạn theo kịch bản này ↗</button>
+    </div>
+    <div class="scenario-item item-conservative" id="scenario-conservative">
+      <div class="scenario-badge badge-green">🟢 Phòng Thủ</div>
+      <div class="scenario-title">Dự phòng</div>
+      <div class="scenario-desc" id="scenario-conservative-text">Giới hạn bồi thường theo thiệt hại thực tế tối đa và mua bảo hiểm.</div>
+      <button class="scenario-apply-btn" data-scenario="conservative">Soạn theo kịch bản này ↗</button>
+    </div>
+  </div>
+</div>
+
+<!-- NotebookLM Studio: Hồ sơ phân tích chuyên sâu -->
+<div class="card s94" id="audit-notebooklm-card">
+  <div class="studio-header">
+    <p class="h" style="margin:0">NotebookLM Studio · Phân tích chuyên sâu</p>
+    <div class="studio-tabs">
+      <button class="studio-tab active" data-tab="briefing">Tóm tắt</button>
+      <button class="studio-tab" data-tab="timeline">Tiến độ</button>
+      <button class="studio-tab" data-tab="missing">Lỗ hổng</button>
+      <button class="studio-tab" data-tab="faq">FAQ</button>
+    </div>
+  </div>
+  <div class="studio-content" id="studio-tab-content">
+    <div id="studio-view-briefing" class="studio-view active">
+      <ul class="studio-list" id="studio-briefing-list">
+        <li>Đang tải tóm tắt điều hành...</li>
+      </ul>
+    </div>
+    <div id="studio-view-timeline" class="studio-view" style="display:none">
+      <div class="timeline-container" id="studio-timeline-list">
+        <!-- Rendered by JS -->
+      </div>
+    </div>
+    <div id="studio-view-missing" class="studio-view" style="display:none">
+      <div class="missing-clauses-container" id="studio-missing-list">
+        <!-- Rendered by JS -->
+      </div>
+    </div>
+    <div id="studio-view-faq" class="studio-view" style="display:none">
+      <div class="faq-container" id="studio-faq-list">
+        <!-- Rendered by JS -->
+      </div>
+    </div>
+  </div>
+</div>
+</section>
+</div></div>
+</div>
+
+<!-- ===== TRANG CHỦ (mặc định) ===== -->
+<div id="home" class="view view-home">
+<div class="s1">
+<div class="s2">
+
+<input type="checkbox" id="hist-off" class="sr" aria-hidden="true">
+<aside class="side s3 is-wide" id="home-sidebar">
+<div class="sky s4" aria-hidden="true"></div>
+<div class="met s5" aria-hidden="true"></div><div class="met s6" aria-hidden="true"></div><div class="met s7" aria-hidden="true"></div><div class="met s8" aria-hidden="true"></div>
+
+<!-- NARROW VIEW (76px) (Hiển thị khi thu gọn) -->
+<div class="side-content-narrow">
+  <button class="ib audit-logo-btn btn-side-expand" id="btn-expand-home-side" title="Mở rộng thanh bên" aria-label="Mở rộng thanh bên">
+    <span class="logo-normal">
+      <svg width="36" height="36" viewBox="0 0 64 64" aria-hidden="true" class="s61"><defs><linearGradient id="gi-home-narrow" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFFFFF"/><stop offset=".5" stop-color="#9CC3FF"/><stop offset="1" stop-color="#4D88FF"/></linearGradient></defs><path d="M28 10Q30 34 54 36Q30 38 28 62Q26 38 2 36Q26 34 28 10Z" fill="url(#gi-home-narrow)"/><path d="M28 10Q30 34 54 36Q30 38 28 62Q26 38 2 36Q26 34 28 10Z" fill="#fff" transform="translate(28 36) scale(.42) translate(-28 -36)"/><path d="M50 5Q51.3 12.7 59 14Q51.3 15.3 50 23Q48.7 15.3 41 14Q48.7 12.7 50 5Z" fill="url(#gi-home-narrow)"/></svg>
+    </span>
+    <span class="logo-hover-icon">
+      <svg class="i" viewBox="0 0 24 24" aria-hidden="true" width="22" height="22" stroke="currentColor" fill="none" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M9 4v16"/></svg>
+    </span>
+  </button>
+  <button class="ib s62" id="btn-home-narrow-new" title="Cuộc trò chuyện mới" aria-label="New Conversation"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+  <button class="ib" id="btn-home-narrow-search" title="Tìm kiếm" aria-label="Search"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg></button>
+  <button class="ib s63" id="btn-home-narrow-pinned" title="Dự án đã ghim" aria-label="Pinned Projects"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h7l4 4v14H7zM14 3v4h4"/></svg></button>
+</div>
+
+<!-- FULL WIDE VIEW (284px) (Mặc định trang chủ) -->
+<div class="side-content-wide">
+  <div class="s9">
+    <a href="#home" class="s10 brand-logo-link" id="home-brand-logo" title="Về trang chủ SecureDoc AI"><svg width="40" height="40" viewBox="0 0 64 64" role="img" aria-label="SecureDoc AI" class="s11"><defs><linearGradient id="gi" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFFFFF"/><stop offset=".5" stop-color="#9CC3FF"/><stop offset="1" stop-color="#4D88FF"/></linearGradient></defs><path d="M28 10Q30 34 54 36Q30 38 28 62Q26 38 2 36Q26 34 28 10Z" fill="url(#gi)"/><path d="M28 10Q30 34 54 36Q30 38 28 62Q26 38 2 36Q26 34 28 10Z" fill="#fff" transform="translate(28 36) scale(.42) translate(-28 -36)"/><path d="M50 5Q51.3 12.7 59 14Q51.3 15.3 50 23Q48.7 15.3 41 14Q48.7 12.7 50 5Z" fill="url(#gi)"/></svg>SecureDoc<span class="s12">&nbsp;AI</span></a>
+    <button aria-label="Đóng sidebar" class="s13 btn-side-collapse" id="btn-close-home-side" title="Thu gọn thanh bên"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M9 4v16"/></svg></button>
+  </div>
+  <button class="s14 btn-full-new" id="btn-home-new"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>New Conversation</button>
+  <button class="nav s15" id="btn-home-search"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>Search</button>
+  <div class="lbl">Pinned Projects</div>
+  <div id="home-pinned-list">
+    <button class="nav"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h7l4 4v14H7zM14 3v4h4"/></svg>HĐ thuê văn phòng Q4</button>
+    <button class="nav"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h7l4 4v14H7zM14 3v4h4"/></svg>HĐ cung cấp phần mềm</button>
+    <button class="nav"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h7l4 4v14H7zM14 3v4h4"/></svg>NDA đối tác Nhật Bản</button>
+  </div>
+  <div class="s16" style="flex:1"></div>
+  <div class="s21"><span class="s22">NA</span><span class="s20"><b>Nguyễn An</b><span class="s23">an@securedoc.ai</span></span><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></div>
+</div>
+</aside>
+
+<main class="s24">
+<label for="hist-off" role="button" aria-label="Mở History" class="open-hist" title="Mở Lịch sử trò chuyện"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M10 12H4M14 12h6M7 9l-3 3 3 3M17 9l3 3-3 3"/></svg></label>
+<header class="s25">
+<div style="position:relative;display:inline-block">
+  <button class="chip s26" id="home-model-btn"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l2 5 5 2-5 2-2 5-2-5-5-2 5-2z"/></svg><span id="home-model-label">Gemini 3.5 Flash</span><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
+  <div id="home-model-menu" class="model-dropdown-menu" style="display:none;position:absolute;top:calc(100% + 8px);right:0;background:rgba(255,255,255,0.95);backdrop-filter:blur(14px);border-radius:14px;box-shadow:0 10px 30px rgba(0,0,0,0.18);border:1px solid #E6EBF7;padding:6px;min-width:180px;z-index:9999;"></div>
+</div>
+<button class="chip s26" id="home-share-btn"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="6" r="2.5"/><circle cx="18" cy="18" r="2.5"/><path d="M8.2 11l7.6-3.8M8.2 13l7.6 3.8"/></svg>Share</button>
+</header>
+<section class="s27">
+<div class="s28">
+<div class="bub s29"><svg width="84" height="84" viewBox="0 0 64 64" aria-hidden="true" class="s30"><path d="M28 10Q30 34 54 36Q30 38 28 62Q26 38 2 36Q26 34 28 10Z" fill="#fff"/><path d="M50 5Q51.3 12.7 59 14Q51.3 15.3 50 23Q48.7 15.3 41 14Q48.7 12.7 50 5Z" fill="#fff"/></svg></div>
+<h1 class="s31">Hỏi đáp &amp; thẩm định tài liệu,<br><em class="s32">bảo mật từ bước đầu tiên</em></h1>
+<p class="s33">Trò chuyện tự do với AI, hoặc tải hợp đồng lên để chấm điểm rủi ro pháp lý.</p>
+</div>
+<div class="card s34">
+<label for="q" class="s35">Câu hỏi</label>
+<textarea id="q" rows="2" placeholder="Đặt câu hỏi, hoặc kéo thả hợp đồng (.pdf, .docx, .txt, .csv) vào đây…" class="s36"></textarea>
+<div class="s37">
+<button aria-label="Đính kèm tài liệu" class="chip s38 btn-attach-trigger" id="home-attach-btn" type="button"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 11l-8.5 8.5a5 5 0 01-7-7L14 4a3.5 3.5 0 015 5l-8.5 8.5a2 2 0 01-3-3L15 7"/></svg></button>
+<button class="chip s39" id="home-pii-btn" type="button"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l7 3v5c0 5-3.5 8.5-7 10-3.5-1.5-7-5-7-10V6z"/></svg><span id="home-pii-label">PII Guard: On</span></button>
+<span class="s16"></span>
+<button aria-label="Gửi" class="s40" id="home-send-btn" type="button" style="border:none;cursor:pointer;"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12l15-8-6 16-2-7z"/></svg></button></div></div>
+<div class="s41">
+<button class="card s42 quick-card" id="card-audit-risk" type="button" data-prompt="Thẩm định rủi ro hợp đồng, chấm điểm từng điều khoản và đề xuất sửa đổi."><b class="s43">Audit Risk</b><br><span class="s44">Chấm điểm rủi ro từng điều khoản</span></button>
+<button class="card s42 quick-card" id="card-legal-check" type="button" data-prompt="Đối chiếu điều khoản phạt hợp đồng với Luật Thương mại 2005 và Bộ luật Dân sự 2015."><b class="s43">Legal Check</b><br><span class="s44">Đối chiếu quy định pháp luật</span></button>
+<button class="card s42 quick-card" id="card-deep-research" type="button" data-prompt="Nghiên cứu sâu các kịch bản đàm phán hợp đồng thương mại và phòng ngừa rủi ro."><b class="s43">Deep Research</b><br><span class="s44">Nghiên cứu sâu, có trích nguồn</span></button></div>
+<p class="s45">PII Guard tự động che SĐT, CCCD, Email và Số tài khoản trước khi gửi tới mô hình AI.</p>
+</section></main>
+
+<aside class="hist s46">
+<label for="hist-off" role="button" aria-label="Thu gọn History" class="s47" title="Thu gọn Lịch sử"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h6M20 12h-6M7 9l3 3-3 3M17 9l-3 3 3 3"/></svg></label>
+<header class="s48"><h2 class="s49">History</h2><span class="s50" id="hist-count-badge">0/50</span></header>
+<div class="s51" id="home-history-list">
+<label class="hi s52"><input type="checkbox" aria-label="Chọn" class="hist-checkbox"><div><b>Thẩm định HĐ thuê văn phòng</b><span>Audit Risk · 3 rủi ro cao, điểm 72/100</span></div></label>
+<label class="hi"><input type="checkbox" aria-label="Chọn" class="hist-checkbox"><div><b>Soạn email phản hồi khách</b><span>Viết email xác nhận gia hạn hợp đồng…</span></div></label>
+<label class="hi"><input type="checkbox" aria-label="Chọn" class="hist-checkbox"><div><b>So sánh điều khoản bảo mật</b><span>Đối chiếu điều khoản NDA hai bên</span></div></label>
+</div>
+<div class="s53"><button class="s54" id="btn-clear-history"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg>Clear history</button></div>
+</aside>
+</div></div>
+</div>
+
+
+<script src="/static/app.js"></script>
+</body>
+</html>

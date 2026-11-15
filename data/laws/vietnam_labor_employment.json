@@ -1,0 +1,42 @@
+[
+  {
+    "law_id": "BLLD_2019_21",
+    "law_name": "Bộ luật Lao động 2019",
+    "article": "Điều 21 khoản 2",
+    "title": "Thỏa thuận bảo vệ bí mật kinh doanh, bí mật công nghệ (NDA lao động)",
+    "content": "Khi người lao động làm việc có liên quan trực tiếp đến bí mật kinh doanh, bí mật công nghệ theo quy định của pháp luật thì người sử dụng lao động có quyền thỏa thuận bằng văn bản với người lao động về nội dung, thời hạn bảo vệ bí mật kinh doanh, bảo vệ bí mật công nghệ, quyền lợi và việc bồi thường trong trường hợp vi phạm.",
+    "category": "labor"
+  },
+  {
+    "law_id": "BLLD_2019_62",
+    "law_name": "Bộ luật Lao động 2019",
+    "article": "Điều 62",
+    "title": "Hợp đồng đào tạo nghề và trách nhiệm hoàn trả chi phí đào tạo",
+    "content": "Hai bên phải ký kết hợp đồng đào tạo nghề trong trường hợp người lao động được đào tạo nâng cao trình độ, kỹ năng nghề từ kinh phí của người sử dụng lao động. Hợp đồng phải có nội dung về chi phí đào tạo và trách nhiệm hoàn trả chi phí đào tạo của người lao động. Chi phí đào tạo bao gồm các khoản chi có chứng từ hợp lệ về chi phí trả cho người dạy, tài liệu học tập, trường lớp, máy móc thiết bị, vật liệu thực hành và tiền lương, tiền đóng bảo hiểm xã hội cho người học trong thời gian đào tạo.",
+    "category": "labor"
+  },
+  {
+    "law_id": "BLLD_2019_35",
+    "law_name": "Bộ luật Lao động 2019",
+    "article": "Điều 35",
+    "title": "Quyền đơn phương chấm dứt hợp đồng lao động của người lao động",
+    "content": "Người lao động có quyền đơn phương chấm dứt hợp đồng lao động nhưng phải báo trước cho người sử dụng lao động ít nhất 45 ngày nếu làm việc theo hợp đồng lao động không xác định thời hạn; ít nhất 30 ngày nếu làm việc theo hợp đồng lao động xác định thời hạn từ 12 tháng đến 36 tháng; ít nhất 03 ngày làm việc nếu làm việc theo hợp đồng lao động xác định thời hạn dưới 12 tháng. Người lao động có quyền đơn phương chấm dứt không cần báo trước nếu không được bố trí đúng công việc, không được trả đủ lương hoặc bị ngược đãi.",
+    "category": "labor"
+  },
+  {
+    "law_id": "BLLD_2019_36",
+    "law_name": "Bộ luật Lao động 2019",
+    "article": "Điều 36",
+    "title": "Quyền đơn phương chấm dứt hợp đồng lao động của người sử dụng lao động",
+    "content": "Người sử dụng lao động có quyền đơn phương chấm dứt hợp đồng lao động trong trường hợp: Người lao động thường xuyên không hoàn thành công việc theo tiêu chí đánh giá; Người lao động bị ốm đau, tai nạn đã điều trị kéo dài; Do thiên tai, hỏa hoạn, dịch bệnh hoặc di dời địa điểm thu hẹp sản xuất; Người lao động không có mặt tại nơi làm việc sau thời hạn tạm hoãn. Phải báo trước ít nhất 45 ngày với HĐ không xác định thời hạn, 30 ngày với HĐ từ 12-36 tháng, 03 ngày với HĐ dưới 12 tháng.",
+    "category": "labor"
+  },
+  {
+    "law_id": "BLLD_2019_127",
+    "law_name": "Bộ luật Lao động 2019",
+    "article": "Điều 127",
+    "title": "Các hành vi bị nghiêm cấm khi xử lý kỷ luật lao động",
+    "content": "Nghiêm cấm người sử dụng lao động: Xâm phạm sức khỏe, danh dự, tính mạng, uy tín, nhân phẩm của người lao động; Phạt tiền, cắt lương thay việc xử lý kỷ luật lao động; Xử lý kỷ luật lao động đối với người lao động có hành vi vi phạm không được quy định trong nội quy lao động hoặc không thỏa thuận trong hợp đồng lao động đã giao kết.",
+    "category": "labor"
+  }
+]
