@@ -1390,6 +1390,53 @@
       window.scrollTo({ top: 0, behavior: 'smooth' });
     });
   });
+
+  // Mobile Slide-out Drawer (☰ Menu -> New Chat + Lịch sử + Tài khoản/Đăng xuất)
+  const mobDrawer = document.getElementById('mobile-drawer');
+  const mobBackdrop = document.getElementById('mobile-drawer-backdrop');
+  const openMobileDrawer = () => {
+    renderMobileDrawerHistory();
+    if (mobDrawer) mobDrawer.classList.add('open');
+    if (mobBackdrop) mobBackdrop.classList.add('open');
+  };
+  const closeMobileDrawer = () => {
+    if (mobDrawer) mobDrawer.classList.remove('open');
+    if (mobBackdrop) mobBackdrop.classList.remove('open');
+  };
+  function renderMobileDrawerHistory() {
+    const listEl = document.getElementById('mobile-drawer-history');
+    const countEl = document.getElementById('mob-hist-count');
+    if (!listEl) return;
+    if (countEl) countEl.textContent = sessionsCache.length;
+    if (!sessionsCache.length) {
+      listEl.innerHTML = '<div style="font-size:12.5px;color:rgba(255,255,255,0.6);padding:8px 4px;">Chưa có lịch sử thẩm định.</div>';
+      return;
+    }
+    listEl.innerHTML = sessionsCache.map(s => `
+      <button type="button" class="mob-hist-item" data-sid="${escapeHtml(s.id)}">
+        <div style="font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(s.title || 'Phiên thẩm định')}</div>
+        <div style="font-size:11px;color:rgba(255,255,255,0.68);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(s.subtitle || '')}</div>
+      </button>
+    `).join('');
+    listEl.querySelectorAll('.mob-hist-item').forEach(item => {
+      item.addEventListener('click', () => {
+        const sid = item.dataset.sid;
+        closeMobileDrawer();
+        if (sid) openSession(sid);
+      });
+    });
+  }
+  document.querySelectorAll('.btn-open-mobile-drawer').forEach(btn => btn.addEventListener('click', openMobileDrawer));
+  const closeMobBtn = document.getElementById('btn-close-mobile-drawer');
+  if (closeMobBtn) closeMobBtn.addEventListener('click', closeMobileDrawer);
+  if (mobBackdrop) mobBackdrop.addEventListener('click', closeMobileDrawer);
+  const mobNewChatBtn = document.getElementById('mob-drawer-new-chat');
+  if (mobNewChatBtn) {
+    mobNewChatBtn.addEventListener('click', () => {
+      closeMobileDrawer();
+      navigateToHome();
+    });
+  }
   // Phân quyền RBAC UI: Mặc định ẩn tuyệt đối nút AI System & RAG, chỉ hiện khi Admin được xác thực
   document.querySelectorAll('.btn-open-inspector').forEach(btn => {
     btn.classList.remove('is-admin-visible');

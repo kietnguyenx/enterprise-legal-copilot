@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/static/style.css?v=20261120f">
+<link rel="stylesheet" href="/static/style.css?v=20261120g">
 </head>
 <body>
 
@@ -22,7 +22,7 @@
 <div class="s55">
 <!-- Thanh chuyển Tab Chat / Thẩm định chỉ hiện trên điện thoại -->
 <div class="mobile-audit-tabs" id="mobile-audit-tabs" style="display:none;">
-  <a href="#home" class="mob-back-btn" title="Về trang chủ">←</a>
+  <button type="button" class="mob-back-btn btn-open-mobile-drawer" title="Mở Menu & Lịch sử" aria-label="Menu">☰</button>
   <div class="mob-seg-wrap">
     <button type="button" class="mob-seg-btn active" data-pane="chat">💬 Hội thoại AI</button>
     <button type="button" class="mob-seg-btn" data-pane="canvas">📊 Thẩm định</button>
@@ -299,7 +299,7 @@
 <main class="s24">
 <label for="hist-off" role="button" aria-label="Mở History" class="open-hist" title="Mở Lịch sử trò chuyện"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M10 12H4M14 12h6M7 9l-3 3 3 3M17 9l3 3-3 3"/></svg></label>
 <header class="s25">
-<a href="/auth?mode=signin" class="chip s26 mobile-only-btn" id="home-mobile-auth-btn" style="display:none;text-decoration:none;margin-right:auto;background:#EFF6FF;color:#0047FF;border-color:#BFDBFE;font-weight:600;">Đăng nhập</a>
+<button type="button" class="chip s26 mobile-only-btn btn-open-mobile-drawer" id="btn-home-mobile-menu" style="display:none;margin-right:auto;padding:7px 11px;font-size:16px;font-weight:700;" aria-label="Mở menu & lịch sử" title="Menu & Lịch sử">☰</button>
 <div style="position:relative;display:inline-block">
   <button class="chip s26" id="home-model-btn"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l2 5 5 2-5 2-2 5-2-5-5-2 5-2z"/></svg><span id="home-model-label">Gemini 3.5 Flash</span><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
   <div id="home-model-menu" class="model-dropdown-menu" style="display:none;position:absolute;top:calc(100% + 8px);right:0;background:rgba(255,255,255,0.95);backdrop-filter:blur(14px);border-radius:14px;box-shadow:0 10px 30px rgba(0,0,0,0.18);border:1px solid #E6EBF7;padding:6px;min-width:180px;z-index:9999;"></div>
@@ -417,7 +417,44 @@
   </div>
 </div>
 
-<script src="/static/app.js?v=20261120e"></script>
+<!-- ===== MOBILE SLIDE-OUT DRAWER (Chuẩn ChatGPT Mobile: New Chat + Lịch sử + Tài khoản/Đăng xuất) ===== -->
+<div id="mobile-drawer-backdrop" class="mobile-drawer-backdrop"></div>
+<aside id="mobile-drawer" class="mobile-drawer" aria-label="Menu di động">
+  <div class="sky s4" aria-hidden="true"></div>
+  <div class="met s5" aria-hidden="true"></div>
+  <div class="met s6" aria-hidden="true"></div>
+  <div class="mob-drawer-head">
+    <div style="display:flex;align-items:center;gap:8px;font-weight:700;font-size:17px;color:#fff;">
+      <svg width="34" height="34" viewBox="0 0 64 64" aria-hidden="true" style="filter:drop-shadow(0 0 10px rgba(156,195,255,0.65));flex-shrink:0;"><defs><linearGradient id="gi-mob-drawer" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFFFFF"/><stop offset=".5" stop-color="#9CC3FF"/><stop offset="1" stop-color="#4D88FF"/></linearGradient></defs><path d="M28 10Q30 34 54 36Q30 38 28 62Q26 38 2 36Q26 34 28 10Z" fill="url(#gi-mob-drawer)"/><path d="M28 10Q30 34 54 36Q30 38 28 62Q26 38 2 36Q26 34 28 10Z" fill="#fff" transform="translate(28 36) scale(.42) translate(-28 -36)"/><path d="M50 5Q51.3 12.7 59 14Q51.3 15.3 50 23Q48.7 15.3 41 14Q48.7 12.7 50 5Z" fill="url(#gi-mob-drawer)"/></svg>
+      <span>SecureDoc<span style="color:#9CC3FF;">&nbsp;AI</span></span>
+    </div>
+    <button type="button" id="btn-close-mobile-drawer" aria-label="Đóng menu" style="width:32px;height:32px;border-radius:10px;border:1px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.08);color:#fff;font-size:18px;cursor:pointer;">&times;</button>
+  </div>
+
+  <button type="button" id="mob-drawer-new-chat" class="mob-drawer-new">+ Cuộc trò chuyện mới</button>
+  <button type="button" class="mob-drawer-nav btn-open-inspector" style="display:none;">⚙ AI System &amp; RAG (Admin)</button>
+
+  <div class="mob-drawer-label">Lịch sử thẩm định (<span id="mob-hist-count">0</span>)</div>
+  <div id="mobile-drawer-history" class="mob-drawer-history">
+    <div style="font-size:12.5px;color:rgba(255,255,255,0.6);padding:8px 4px;">Chưa có lịch sử trò chuyện.</div>
+  </div>
+
+  <div class="mob-drawer-footer user-profile-slot">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+      <span class="s22" style="width:36px;height:36px;border-radius:50%;background:#FFFFFF;color:#0047FF;display:grid;place-items:center;font-weight:700;font-size:13px;flex-shrink:0;">KH</span>
+      <div style="overflow:hidden;flex:1;">
+        <div class="menu-user-name" style="font-weight:700;font-size:13.5px;color:#FFFFFF;white-space:nowrap;text-overflow:ellipsis;overflow:hidden;">Khách</div>
+        <div class="menu-user-email" style="font-size:11.5px;color:rgba(255,255,255,0.72);white-space:nowrap;text-overflow:ellipsis;overflow:hidden;">Chưa đăng nhập</div>
+      </div>
+    </div>
+    <div id="mob-drawer-auth-actions" style="display:flex;gap:8px;">
+      <a href="/auth?mode=signin" id="mob-drawer-login-btn" style="flex:1;text-align:center;padding:9px 10px;border-radius:10px;background:#FFFFFF;color:#0047FF;text-decoration:none;font-size:12.5px;font-weight:700;">Đăng nhập</a>
+      <button type="button" id="mob-drawer-logout-btn" onclick="logoutSecureDocUser(event)" style="display:none;flex:1;padding:9px 10px;border-radius:10px;border:1px solid rgba(254,202,202,0.45);background:rgba(239,68,68,0.18);color:#FECACA;font-family:inherit;font-size:12.5px;font-weight:700;cursor:pointer;">Đăng xuất</button>
+    </div>
+  </div>
+</aside>
+
+<script src="/static/app.js?v=20261120g"></script>
 <script>
 // Bóc tách thông tin người dùng nếu vừa được Supabase OAuth chuyển hướng về
 function parseSupabaseOAuthHash() {
@@ -499,15 +536,16 @@ function syncCurrentUserProfile() {
     if (menuEmailEl) menuEmailEl.textContent = user.email;
   });
 
-  const mobAuthBtn = document.getElementById('home-mobile-auth-btn');
-  if (mobAuthBtn) {
-    if (user.email && user.email.includes('@')) {
-      mobAuthBtn.textContent = user.name;
-      mobAuthBtn.title = 'Chuyển tài khoản / Đăng xuất';
-    } else {
-      mobAuthBtn.textContent = 'Đăng nhập';
-      mobAuthBtn.title = 'Đăng nhập miễn phí';
-    }
+  const mobLoginBtn = document.getElementById('mob-drawer-login-btn');
+  const mobLogoutBtn = document.getElementById('mob-drawer-logout-btn');
+  const isAuthUser = Boolean(user.email && user.email.includes('@'));
+  if (mobLoginBtn) {
+    mobLoginBtn.textContent = isAuthUser ? 'Đổi tài khoản' : 'Đăng nhập miễn phí';
+    mobLoginBtn.style.background = isAuthUser ? 'rgba(255,255,255,0.14)' : '#FFFFFF';
+    mobLoginBtn.style.color = isAuthUser ? '#FFFFFF' : '#0047FF';
+  }
+  if (mobLogoutBtn) {
+    mobLogoutBtn.style.display = isAuthUser ? 'block' : 'none';
   }
 
   updateDynamicGreeting(user.name);
