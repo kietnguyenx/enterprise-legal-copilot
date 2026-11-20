@@ -3,7 +3,7 @@ SecureDoc AI — Analytics & Observability Router
 Endpoints for system health, telemetry tracing, cache metrics, and available models.
 """
 import os
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 from pydantic import BaseModel
 from src.auth import AuthUser, get_current_user, require_admin
 from src.database import check_db_health, db_upsert_user, db_get_user_by_email
@@ -13,6 +13,7 @@ from src.llm import check_ollama_status
 from src.cache import get_semantic_cache
 from src.telemetry import get_telemetry
 from src.config import MODELS
+from src.routers.audit import get_guest_remaining_uses, GUEST_FREE_LIMIT
 
 router = APIRouter(tags=["Analytics & Observability"])
 
@@ -53,7 +54,7 @@ async def api_sync_profile(req: ProfileSyncRequest):
 
 
 @router.get("/api/auth/me")
-async def get_auth_me(user: AuthUser = Depends(get_current_user)):
+async def get_auth_me(request: Request, user: AuthUser = Depends(get_current_user)):
     """Xác thực & đồng bộ hồ sơ người dùng hiện tại từ Supabase JWT / Database"""
     resolved_name = user.name
     if user.is_authenticated:
@@ -70,6 +71,8 @@ async def get_auth_me(user: AuthUser = Depends(get_current_user)):
         "name": resolved_name,
         "role": user.role,
         "is_authenticated": user.is_authenticated,
+        "guest_remaining_uses": None if user.is_authenticated else get_guest_remaining_uses(request),
+        "guest_limit": GUEST_FREE_LIMIT,
     }
 
 

@@ -510,6 +510,13 @@
         body: formData,
       });
       if (!res.ok) {
+        if (res.status === 401) {
+          const modal = document.getElementById('guest-limit-modal');
+          if (modal) {
+            modal.style.display = 'flex';
+            return;
+          }
+        }
         const err = await res.json().catch(() => ({}));
         throw new Error(err.detail || 'Lỗi khi tải file lên');
       }
@@ -637,6 +644,13 @@
       if (newSid) currentSessionId = newSid;
 
       if (!res.ok) {
+        if (res.status === 401) {
+          const modal = document.getElementById('guest-limit-modal');
+          if (modal) modal.style.display = 'flex';
+          if (onChunk) onChunk('🔒 Bạn đã dùng hết 3 lượt trải nghiệm miễn phí. Vui lòng đăng nhập để tiếp tục sử dụng không giới hạn.');
+          if (onDone) onDone();
+          return;
+        }
         const err = await res.json().catch(() => ({}));
         throw new Error(err.detail || 'Lỗi từ máy chủ AI');
       }
@@ -1365,6 +1379,17 @@
   // ================= STARTUP =================
   initModels();
   initSystemInspector();
+
+  // Chuyển Tab Chat / Thẩm định trên màn hình điện thoại
+  const auditViewEl = document.getElementById('audit');
+  document.querySelectorAll('.mob-seg-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.mob-seg-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      if (auditViewEl) auditViewEl.setAttribute('data-mobile-pane', btn.dataset.pane || 'chat');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  });
   // Phân quyền RBAC UI: Mặc định ẩn tuyệt đối nút AI System & RAG, chỉ hiện khi Admin được xác thực
   document.querySelectorAll('.btn-open-inspector').forEach(btn => {
     btn.classList.remove('is-admin-visible');
@@ -1377,6 +1402,11 @@
         document.querySelectorAll('.btn-open-inspector').forEach(btn => {
           btn.classList.add('is-admin-visible');
           btn.style.display = '';
+        });
+      }
+      if (!me.is_authenticated && typeof me.guest_remaining_uses === 'number') {
+        document.querySelectorAll('.user-profile-slot .s23, .user-profile-slot .menu-user-email').forEach(el => {
+          el.textContent = `Còn ${me.guest_remaining_uses}/${me.guest_limit || 3} lượt dùng thử`;
         });
       }
       // Đồng bộ lại tên thật từ Database (tránh bị sai tên thành tiền tố email khi đăng nhập ở InPrivate/máy mới)
@@ -1400,6 +1430,10 @@
     })
     .catch(() => {});
   loadSessions().then(() => {
+    window.__securedocSessionCount = sessionsCache.length;
+    if (typeof window.updateDynamicGreeting === 'function') {
+      window.updateDynamicGreeting(undefined, sessionsCache.length);
+    }
     if (window.location.hash === '#audit' && sessionsCache.length) {
       openSession(sessionsCache[0].id);
     }

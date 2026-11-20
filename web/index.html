@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/static/style.css?v=20261120b">
+<link rel="stylesheet" href="/static/style.css?v=20261120f">
 </head>
 <body>
 
@@ -20,6 +20,14 @@
 <!-- ===== THẨM ĐỊNH TÀI LIỆU (index.html#audit) ===== -->
 <div id="audit" class="view view-audit">
 <div class="s55">
+<!-- Thanh chuyển Tab Chat / Thẩm định chỉ hiện trên điện thoại -->
+<div class="mobile-audit-tabs" id="mobile-audit-tabs" style="display:none;">
+  <a href="#home" class="mob-back-btn" title="Về trang chủ">←</a>
+  <div class="mob-seg-wrap">
+    <button type="button" class="mob-seg-btn active" data-pane="chat">💬 Hội thoại AI</button>
+    <button type="button" class="mob-seg-btn" data-pane="canvas">📊 Thẩm định</button>
+  </div>
+</div>
 <div class="split s56">
 
 <aside class="side s57 is-narrow" id="audit-sidebar">
@@ -95,6 +103,7 @@
 
 <section class="s64">
 <header class="s65">
+<a href="#home" class="chip s66 mobile-only-btn" id="audit-mobile-home-btn" title="Về trang chủ" style="display:none;text-decoration:none;padding:6px 10px;">←</a>
 <span class="chip s66"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h7l4 4v14H7zM14 3v4h4"/></svg><span id="audit-doc-name">HD_ThueVanPhong_Q4.docx</span></span><span class="s67"></span>
 <div style="position:relative;display:inline-block">
   <button class="chip s66" id="audit-model-btn"><span id="audit-model-label">Gemini 3.5 Flash</span><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
@@ -290,6 +299,7 @@
 <main class="s24">
 <label for="hist-off" role="button" aria-label="Mở History" class="open-hist" title="Mở Lịch sử trò chuyện"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M10 12H4M14 12h6M7 9l-3 3 3 3M17 9l3 3-3 3"/></svg></label>
 <header class="s25">
+<a href="/auth?mode=signin" class="chip s26 mobile-only-btn" id="home-mobile-auth-btn" style="display:none;text-decoration:none;margin-right:auto;background:#EFF6FF;color:#0047FF;border-color:#BFDBFE;font-weight:600;">Đăng nhập</a>
 <div style="position:relative;display:inline-block">
   <button class="chip s26" id="home-model-btn"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l2 5 5 2-5 2-2 5-2-5-5-2 5-2z"/></svg><span id="home-model-label">Gemini 3.5 Flash</span><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
   <div id="home-model-menu" class="model-dropdown-menu" style="display:none;position:absolute;top:calc(100% + 8px);right:0;background:rgba(255,255,255,0.95);backdrop-filter:blur(14px);border-radius:14px;box-shadow:0 10px 30px rgba(0,0,0,0.18);border:1px solid #E6EBF7;padding:6px;min-width:180px;z-index:9999;"></div>
@@ -394,7 +404,20 @@
   </div>
 </div>
 
-<script src="/static/app.js?v=20261120b"></script>
+<!-- ===== GUEST LIMIT / LOGIN PROMPT MODAL (Giống ChatGPT khi hết lượt thử miễn phí) ===== -->
+<div id="guest-limit-modal" style="display:none;position:fixed;inset:0;z-index:100001;background:rgba(15,23,42,0.56);backdrop-filter:blur(7px);align-items:center;justify-content:center;padding:20px;">
+  <div style="background:#FFFFFF;border-radius:24px;width:min(440px,100%);padding:28px;text-align:center;box-shadow:0 24px 64px rgba(5,22,65,0.3);border:1px solid #E2E8F0;">
+    <div style="width:52px;height:52px;margin:0 auto 14px;border-radius:16px;background:linear-gradient(135deg,#2B7BFF,#0047FF);color:#fff;display:grid;place-items:center;font-size:24px;box-shadow:0 8px 20px rgba(0,71,255,0.28);">✦</div>
+    <h3 style="margin:0 0 8px;font-size:19px;font-weight:700;color:#0F2147;">Bạn đã hết lượt dùng thử miễn phí</h3>
+    <p style="margin:0 0 20px;font-size:13.5px;line-height:1.55;color:#64748B;">Đăng nhập miễn phí vào <b>SecureDoc AI</b> để tiếp tục thẩm định hợp đồng không giới hạn, lưu lịch sử riêng tư và xuất báo cáo Word.</p>
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      <a href="/auth?mode=signin" style="display:flex;align-items:center;justify-content:center;gap:8px;height:44px;border-radius:999px;background:linear-gradient(180deg,#2B7BFF 0%,#0047FF 100%);color:#fff;text-decoration:none;font-size:14px;font-weight:700;box-shadow:0 8px 20px rgba(0,71,255,0.25);">Đăng nhập / Đăng ký miễn phí</a>
+      <button type="button" onclick="document.getElementById('guest-limit-modal').style.display='none'" style="height:40px;border-radius:999px;border:1px solid #E2E8F0;background:#F8FAFC;color:#475569;font-size:13px;font-weight:600;cursor:pointer;">Để sau</button>
+    </div>
+  </div>
+</div>
+
+<script src="/static/app.js?v=20261120e"></script>
 <script>
 // Bóc tách thông tin người dùng nếu vừa được Supabase OAuth chuyển hướng về
 function parseSupabaseOAuthHash() {
@@ -476,11 +499,22 @@ function syncCurrentUserProfile() {
     if (menuEmailEl) menuEmailEl.textContent = user.email;
   });
 
+  const mobAuthBtn = document.getElementById('home-mobile-auth-btn');
+  if (mobAuthBtn) {
+    if (user.email && user.email.includes('@')) {
+      mobAuthBtn.textContent = user.name;
+      mobAuthBtn.title = 'Chuyển tài khoản / Đăng xuất';
+    } else {
+      mobAuthBtn.textContent = 'Đăng nhập';
+      mobAuthBtn.title = 'Đăng nhập miễn phí';
+    }
+  }
+
   updateDynamicGreeting(user.name);
 }
 
-// Lời chào động theo khung giờ thực tế & câu gợi ý xoay vòng như ChatGPT / Claude / Gemini
-function updateDynamicGreeting(fullName) {
+// Lời chào động cá nhân hóa theo 3 cấp độ: Khách mới -> Tài khoản mới -> Người dùng quay lại (đã dùng >=1 lần)
+function updateDynamicGreeting(fullName, sessionCount) {
   const greetEl = document.getElementById('hero-greeting-line');
   const tagEl = document.getElementById('hero-tagline');
   const subEl = document.getElementById('hero-subtitle');
@@ -500,35 +534,60 @@ function updateDynamicGreeting(fullName) {
     timeGreeting = 'Làm việc khuya nhé';
   }
 
+  let isLoggedIn = false;
   let displayName = (fullName || '').trim();
-  if (!displayName) {
-    try {
-      const raw = localStorage.getItem('securedoc_user');
-      if (raw) displayName = (JSON.parse(raw).name || '').trim();
-    } catch (e) {}
-  }
-  displayName = displayName || 'bạn';
-  greetEl.textContent = `${timeGreeting}, ${displayName}`;
+  try {
+    const raw = localStorage.getItem('securedoc_user');
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed && parsed.email && parsed.email.includes('@')) {
+        isLoggedIn = true;
+        if (!displayName) displayName = (parsed.name || '').trim();
+      }
+    }
+  } catch (e) {}
 
-  const taglines = [
+  const count = typeof sessionCount === 'number'
+    ? sessionCount
+    : (typeof window.__securedocSessionCount === 'number' ? window.__securedocSessionCount : 0);
+
+  // 1. Chưa đăng nhập (Khách mới mở link giống ChatGPT)
+  if (!isLoggedIn) {
+    greetEl.textContent = `${timeGreeting}!`;
+    if (tagEl) tagEl.textContent = 'Bảo mật dữ liệu từ bước đầu tiên.';
+    if (subEl) subEl.textContent = 'Dùng thử miễn phí ngay không cần đăng nhập — tải hợp đồng (.pdf, .docx, ảnh scan) hoặc hỏi AI.';
+    return;
+  }
+
+  // 2. Đã đăng nhập nhưng chưa thẩm định lần nào (Tài khoản mới)
+  if (count === 0) {
+    greetEl.textContent = `Chào mừng, ${displayName}`;
+    if (tagEl) tagEl.textContent = 'Bắt đầu thẩm định hợp đồng đầu tiên của bạn.';
+    if (subEl) subEl.textContent = 'PII Token Vault & Legal Vector RAG đã sẵn sàng — tải bản thảo hoặc ảnh chụp dấu đỏ lên ngay.';
+    return;
+  }
+
+  // 3. Tài khoản đã sử dụng từ 1–2 lần trở lên (Returning User)
+  const returningGreetings = [
+    `${timeGreeting}, ${displayName}`,
+    `Rất vui gặp lại, ${displayName}`,
+  ];
+  greetEl.textContent = returningGreetings[count % returningGreetings.length];
+
+  const returningTaglines = [
     'Hôm nay ta thẩm định hợp đồng nào?',
-    'Sẵn sàng rà soát rủi ro pháp lý cho bạn.',
-    'Bảo mật dữ liệu từ bước đầu tiên.',
+    'Tiếp tục rà soát rủi ro pháp lý cho bạn.',
     'Bạn cần đối chiếu điều khoản nào hôm nay?',
     'Cùng tìm điểm bất lợi trước khi đặt bút ký.',
   ];
-  const subtitles = [
-    'Trò chuyện tự do với AI, hoặc tải hợp đồng (.pdf, .docx, ảnh scan) lên để chấm điểm rủi ro pháp lý.',
-    'PII Token Vault & Legal Vector RAG đang sẵn sàng — mọi dữ liệu nhạy cảm đều được bảo vệ.',
+  const returningSubtitles = [
+    `Bạn đang có ${count} phiên thẩm định trong lịch sử — chọn lại bên phải hoặc tải hợp đồng mới lên ngay.`,
+    'PII Token Vault & Legal Vector RAG đang hoạt động — mọi dữ liệu nhạy cảm đều được bảo vệ.',
     'Tải lên bản thảo hợp đồng hoặc ảnh chụp dấu đỏ để nhận Ma trận 3 kịch bản đàm phán.',
   ];
 
-  if (tagEl) {
-    tagEl.textContent = taglines[Math.floor(Math.random() * taglines.length)];
-  }
-  if (subEl) {
-    subEl.textContent = subtitles[Math.floor(Math.random() * subtitles.length)];
-  }
+  if (tagEl) tagEl.textContent = returningTaglines[Math.floor(Math.random() * returningTaglines.length)];
+  if (subEl) subEl.textContent = returningSubtitles[Math.floor(Math.random() * returningSubtitles.length)];
 }
 window.updateDynamicGreeting = updateDynamicGreeting;
 

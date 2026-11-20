@@ -26,6 +26,37 @@ from src.services.session_service import SESSIONS, _lock, save_store, format_pub
 
 router = APIRouter(tags=["Document Ingestion & Chat Audit"])
 
+GUEST_FREE_LIMIT = 3
+_GUEST_USAGE: dict[str, int] = {}
+
+
+def _get_client_ip(request: Request) -> str:
+    forwarded = request.headers.get("X-Forwarded-For", "").split(",")[0].strip()
+    if forwarded:
+        return forwarded
+    return request.client.host if request.client else "unknown"
+
+
+def _consume_guest_quota_or_raise(request: Request, user: AuthUser):
+    """Giới hạn 3 lượt dùng thử miễn phí cho khách chưa đăng nhập (giống ChatGPT); hết lượt yêu cầu đăng nhập."""
+    if user.is_authenticated:
+        return
+    ip = _get_client_ip(request)
+    if ip == "testclient":
+        return
+    used = _GUEST_USAGE.get(ip, 0)
+    if used >= GUEST_FREE_LIMIT:
+        raise HTTPException(
+            status_code=401,
+            detail="GUEST_LIMIT_REACHED: Bạn đã dùng hết 3 lượt trải nghiệm miễn phí. Vui lòng đăng nhập để tiếp tục sử dụng không giới hạn.",
+        )
+    _GUEST_USAGE[ip] = used + 1
+
+
+def get_guest_remaining_uses(request: Request) -> int:
+    ip = _get_client_ip(request)
+    return max(0, GUEST_FREE_LIMIT - _GUEST_USAGE.get(ip, 0))
+
 
 @router.post("/api/upload")
 @limiter.limit("10/minute")
@@ -37,6 +68,7 @@ async def upload(
     user: AuthUser = Depends(get_current_user),
 ):
     """Tiếp nhận, bóc tách và tự động thẩm định tài liệu hợp đồng (hỗ trợ PDF, DOCX, TXT, CSV, MD & Ảnh OCR)"""
+    _consume_guest_quota_or_raise(request, user)
     if user.is_authenticated:
         await db_upsert_user(email=user.email, username=user.name, role=user.role)
     data = file.file.read()
@@ -117,6 +149,7 @@ class ChatRequest(BaseModel):
 @limiter.limit("40/minute")
 async def chat(request: Request, req: ChatRequest, user: AuthUser = Depends(get_current_user)):
     """Luồng hội thoại đối thoại pháp lý thời gian thực qua Server-Sent Events (SSE)"""
+    _consume_guest_quota_or_raise(request, user)
     text = req.message.strip()
     if not text:
         raise HTTPException(400, "Tin nhắn trống")
