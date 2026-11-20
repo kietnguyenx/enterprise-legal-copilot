@@ -2572,3 +2572,26 @@ body.resizing-col * {
   padding-top: 12px;
   border-top: 1px solid rgba(255, 255, 255, 0.16);
 }
+
+/* ==================== iOS SAFARI EDGE-TO-EDGE POLISH ==================== */
+@media (max-width: 900px) {
+  html, body {
+    background: #F4F7FF !important;
+  }
+  .view-home .s1,
+  .view-home .s2 {
+    background: #F4F7FF !important;
+    height: auto !important;
+    min-height: 100dvh !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    overflow: visible !important;
+  }
+  .view-home .s24 {
+    background: #F4F7FF !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    padding-top: calc(10px + env(safe-area-inset-top)) !important;
+    padding-bottom: calc(24px + env(safe-area-inset-bottom)) !important;
+  }
+}
