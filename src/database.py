@@ -12,7 +12,7 @@ from typing import AsyncGenerator, Optional, Dict, Any, List
 from dotenv import load_dotenv
 
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
-from sqlalchemy import select, update, delete
+from sqlalchemy import select, update, delete, text
 
 from src.models import Base, User, Document, AuditSession, HITLFeedback
 
@@ -55,13 +55,35 @@ AsyncSessionLocal = async_sessionmaker(
 
 
 async def init_db():
-    """Khởi tạo bảng cơ sở dữ liệu khi khởi động máy chủ"""
+    """Khởi tạo bảng cơ sở dữ liệu khi khởi động máy chủ (có Failover thực sự sang SQLite khi Cloud DB lỗi)"""
+    global engine, AsyncSessionLocal, DB_URL
     try:
         async with engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
+            try:
+                await conn.execute(text("ALTER TABLE audit_sessions ADD COLUMN owner_id VARCHAR(128)"))
+            except Exception:
+                pass
         logger.info(f"✅ Cơ sở dữ liệu khởi tạo thành công: {DB_URL.split('@')[-1] if '@' in DB_URL else DB_URL}")
     except Exception as e:
-        logger.error(f"❌ Lỗi khi khởi tạo cơ sở dữ liệu ({e}), chuyển sang chế độ dự phòng SQLite...")
+        logger.error(f"❌ Lỗi khi khởi tạo cơ sở dữ liệu ({e}), thực hiện chuyển mạch dự phòng sang SQLite...")
+        if DB_URL != DEFAULT_SQLITE_URL:
+            DB_URL = DEFAULT_SQLITE_URL
+            engine = create_async_engine(DB_URL, echo=False, future=True, pool_pre_ping=True)
+            AsyncSessionLocal = async_sessionmaker(
+                bind=engine,
+                class_=AsyncSession,
+                expire_on_commit=False,
+                autocommit=False,
+                autoflush=False,
+            )
+            async with engine.begin() as conn:
+                await conn.run_sync(Base.metadata.create_all)
+                try:
+                    await conn.execute(text("ALTER TABLE audit_sessions ADD COLUMN owner_id VARCHAR(128)"))
+                except Exception:
+                    pass
+            logger.info("✅ Đã chuyển mạch dự phòng sang SQLite Async thành công!")
 
 
 async def get_db() -> AsyncGenerator[AsyncSession, None]:
@@ -77,6 +99,40 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
 
 # ================= CÁC HÀM TIỆN ÍCH LƯU TRỮ VÀ TRUY VẤN NHANH =================
 
+async def db_get_user_by_email(email: str) -> Optional[Dict[str, Any]]:
+    """Lấy hồ sơ người dùng theo email từ bảng users"""
+    try:
+        async with AsyncSessionLocal() as db:
+            result = await db.execute(select(User).where(User.email == email.strip().lower()))
+            u = result.scalar_one_or_none()
+            if u:
+                return {"id": u.id, "username": u.username, "email": u.email, "role": u.role}
+            return None
+    except Exception as e:
+        logger.warning(f"Không thể truy vấn user từ DB ({e})")
+        return None
+
+
+async def db_upsert_user(email: str, username: str, role: str = "lawyer", overwrite_name: bool = False) -> bool:
+    """Đồng bộ thông tin người dùng đã xác thực vào bảng users"""
+    try:
+        norm_email = email.strip().lower()[:128]
+        async with AsyncSessionLocal() as db:
+            result = await db.execute(select(User).where(User.email == norm_email))
+            existing = result.scalar_one_or_none()
+            if existing:
+                existing.role = role or existing.role
+                if overwrite_name and username and username.strip():
+                    existing.username = username.strip()[:64]
+            else:
+                db.add(User(username=(username or norm_email.split("@")[0]).strip()[:64], email=norm_email, role=role or "lawyer"))
+            await db.commit()
+            return True
+    except Exception as e:
+        logger.warning(f"Không thể đồng bộ user vào DB ({e})")
+        return False
+
+
 async def db_save_session(session_data: Dict[str, Any]) -> bool:
     """Lưu hoặc cập nhật thông tin phiên làm việc vào Database"""
     try:
@@ -86,6 +142,7 @@ async def db_save_session(session_data: Dict[str, Any]) -> bool:
             existing = result.scalar_one_or_none()
 
             if existing:
+                existing.owner_id = session_data.get("owner_id", existing.owner_id)
                 existing.title = session_data.get("title", existing.title)
                 existing.file_name = session_data.get("file_name", existing.file_name)
                 existing.file_size = session_data.get("file_size", existing.file_size)
@@ -100,6 +157,7 @@ async def db_save_session(session_data: Dict[str, Any]) -> bool:
                 audit = session_data.get("audit") or {}
                 new_session = AuditSession(
                     id=sid,
+                    owner_id=session_data.get("owner_id"),
                     title=session_data.get("title", "Phiên thẩm định"),
                     file_name=session_data.get("file_name"),
                     file_size=session_data.get("file_size"),
@@ -120,9 +178,13 @@ async def db_save_session(session_data: Dict[str, Any]) -> bool:
 
 
 async def db_save_feedback(session_id: str, rating: str, message_index: int = -1, user_correction: str = "", original_text: str = "") -> bool:
-    """Lưu phản hồi Human-in-the-Loop (HITL) vào Database"""
+    """Lưu phản hồi Human-in-the-Loop (HITL) vào Database (kiểm tra session tồn tại tránh lỗi Foreign Key mồ côi)"""
     try:
         async with AsyncSessionLocal() as db:
+            exists = await db.execute(select(AuditSession.id).where(AuditSession.id == session_id))
+            if exists.scalar_one_or_none() is None:
+                logger.info(f"Bỏ qua lưu HITL feedback vào DB vì session '{session_id}' chưa tồn tại trong bảng cha.")
+                return False
             fb = HITLFeedback(
                 session_id=session_id,
                 message_index=message_index,
@@ -135,6 +197,23 @@ async def db_save_feedback(session_id: str, rating: str, message_index: int = -1
             return True
     except Exception as e:
         logger.warning(f"Không thể lưu HITL feedback vào DB ({e})")
+        return False
+
+
+async def db_delete_sessions(session_ids: Optional[List[str]] = None) -> bool:
+    """Xóa đồng bộ các phiên làm việc trong Database"""
+    try:
+        async with AsyncSessionLocal() as db:
+            if session_ids is None:
+                await db.execute(delete(HITLFeedback))
+                await db.execute(delete(AuditSession))
+            elif session_ids:
+                await db.execute(delete(HITLFeedback).where(HITLFeedback.session_id.in_(session_ids)))
+                await db.execute(delete(AuditSession).where(AuditSession.id.in_(session_ids)))
+            await db.commit()
+            return True
+    except Exception as e:
+        logger.warning(f"Không thể xóa session trong DB ({e})")
         return False
 
 

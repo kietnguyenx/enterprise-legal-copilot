@@ -2,10 +2,10 @@
 import re
 
 _PII_PATTERNS = [
-    ("phone", "PHONE", re.compile(r'(?<!\d)(?:0|\+84)[35789]\d{8}(?!\d)')),
+    ("phone", "PHONE", re.compile(r'(?<!\d)(?:0|\+84)[35789]\d(?:[\s\.-]?\d){7}(?!\d)')),
     ("email", "EMAIL", re.compile(r'[\w\.-]+@[\w\.-]+\.\w+')),
-    ("id", "ID", re.compile(r'\b\d{9}\b|\b\d{12}\b')),
-    ("bank", "BANK", re.compile(r'\b\d{10,16}\b')),
+    ("id", "ID", re.compile(r'(?i)(?<!\d)(?:\d{9}|\d{12})(?!\d)(?!\s*(?:vnđ|vnd|đồng|usd|eur|đ\b))')),
+    ("bank", "BANK", re.compile(r'(?i)(?<!\d)\d{10,16}(?!\d)(?!\s*(?:vnđ|vnd|đồng|usd|eur|đ\b))')),
 ]
 
 

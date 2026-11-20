@@ -50,11 +50,12 @@ def check_input_guardrails(user_prompt: str) -> Tuple[bool, str, str]:
     if not user_prompt or not user_prompt.strip():
         return True, "clean", ""
 
-    text = user_prompt.strip()
+    # 0. Chuẩn hóa & loại bỏ ký tự tàng hình (zero-width chars) TRƯỚC khi quét regex chống bypass
+    text = re.sub(r"[\u200B-\u200D\uFEFF]", "", user_prompt.strip())
 
-    # 1. Quét phát hiện Prompt Injection & System Leakage
+    # 1. Quét phát hiện Prompt Injection & System Leakage (bật re.DOTALL chống bypass bằng \n)
     for pattern, rule_id in _INJECTION_PATTERNS:
-        match = re.search(pattern, text)
+        match = re.search(pattern, text, flags=re.DOTALL)
         if match:
             matched_segment = match.group(0)[:60]
             logger.warning(f"🚨 Phát hiện Prompt Injection [{rule_id}]: '{matched_segment}'")
@@ -66,7 +67,7 @@ def check_input_guardrails(user_prompt: str) -> Tuple[bool, str, str]:
 
     # 2. Quét phát hiện ý đồ độc hại
     for pattern, rule_id in _MALICIOUS_INTENTS:
-        match = re.search(pattern, text)
+        match = re.search(pattern, text, flags=re.DOTALL)
         if match:
             logger.warning(f"🚨 Phát hiện yêu cầu phi pháp/độc hại [{rule_id}]")
             return (
@@ -75,7 +76,4 @@ def check_input_guardrails(user_prompt: str) -> Tuple[bool, str, str]:
                 "⚠️ Yêu cầu của bạn vi phạm chính sách sử dụng và chuẩn mực tuân thủ pháp lý doanh nghiệp. SecureDoc AI chỉ hỗ trợ thẩm định, rà soát rủi ro hợp đồng và phân tích văn bản pháp luật."
             )
 
-    # 3. Chuẩn hóa nhẹ nhàng loại bỏ các ký tự điều khiển ẩn (zero-width chars)
-    sanitized = re.sub(r"[\u200B-\u200D\uFEFF]", "", text)
-
-    return True, "clean", sanitized
+    return True, "clean", text

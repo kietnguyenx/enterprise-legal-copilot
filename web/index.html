@@ -4,15 +4,17 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SecureDoc AI</title>
+<link rel="icon" type="image/x-icon" href="/favicon.ico">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><path d='M28 10Q30 34 54 36Q30 38 28 62Q26 38 2 36Q26 34 28 10Z' fill='%230047FF'/><path d='M50 5Q51.3 12.7 59 14Q51.3 15.3 50 23Q48.7 15.3 41 14Q48.7 12.7 50 5Z' fill='%230047FF'/></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/static/style.css">
+<link rel="stylesheet" href="/static/style.css?v=20261120b">
 </head>
 <body>
 
-<!-- Global Hidden File Input -->
-<input type="file" id="global-file-input" style="display:none" accept=".pdf,.docx,.txt,.csv,.md">
+<!-- Global Hidden File Input (Hỗ trợ tài liệu + Ảnh OCR) -->
+<input type="file" id="global-file-input" style="display:none" accept=".pdf,.docx,.txt,.csv,.md,.png,.jpg,.jpeg,.webp">
 
 
 <!-- ===== THẨM ĐỊNH TÀI LIỆU (index.html#audit) ===== -->
@@ -37,6 +39,7 @@
   <a href="#home" class="ib s62" id="btn-audit-new" title="Cuộc trò chuyện mới (New Chat)" aria-label="Bố cục New Chat"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></a>
   <button class="ib" id="btn-audit-search" title="Tìm kiếm" aria-label="Search"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg></button>
   <button class="ib s63" id="btn-audit-pinned" title="Dự án đã ghim" aria-label="Pinned Projects"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h7l4 4v14H7zM14 3v4h4"/></svg></button>
+  <button class="ib btn-open-inspector" id="btn-audit-inspector" style="display:none" title="AI System & RAG Inspector" aria-label="AI System & RAG Inspector"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M9 9h6v6H9zM9 1v3M15 1v3M9 20v3M15 20v3M20 9h3M20 14h3M1 9h3M1 14h3"/></svg></button>
 </div>
 
 <!-- FULL WIDE VIEW (284px) - Bố cục bên trái New Chat đầy đủ -->
@@ -47,6 +50,7 @@
   </div>
   <a href="#home" class="s14 btn-full-new" id="btn-audit-full-new" style="text-decoration:none;"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>New Conversation</a>
   <button class="nav s15" id="btn-audit-full-search"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>Search</button>
+  <button class="nav s15 btn-open-inspector" id="btn-audit-full-inspector" style="display:none"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M9 9h6v6H9z"/></svg>AI System &amp; RAG</button>
   <div class="lbl">Pinned Projects</div>
   <div id="audit-pinned-list" class="pinned-list-container">
     <button class="nav"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h7l4 4v14H7zM14 3v4h4"/></svg>HĐ thuê văn phòng Q4</button>
@@ -54,7 +58,38 @@
     <button class="nav"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h7l4 4v14H7zM14 3v4h4"/></svg>NDA đối tác Nhật Bản</button>
   </div>
   <div class="s16" style="flex:1"></div>
-  <div class="s21"><span class="s22">NA</span><span class="s20"><b>Nguyễn An</b><span class="s23">an@securedoc.ai</span></span><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></div>
+  <div class="user-profile-slot" style="position:relative;margin-top:14px;">
+    <div class="s21 user-profile-card" onclick="toggleUserProfileMenu(this, event)" title="Hồ sơ tài khoản" style="margin-top:0;">
+      <span class="s22">MK</span>
+      <span class="s20"><b>Minh Khoa</b><span class="s23">khoa.nguyen@securedoc.ai</span></span>
+      <svg class="i chevron-icon" viewBox="0 0 24 24" aria-hidden="true" style="transition:transform .2s ease;"><path d="M6 9l6 6 6-6"/></svg>
+    </div>
+    
+    <!-- Dropdown Menu Tài khoản Người dùng -->
+    <div class="user-profile-dropdown" style="display:none;position:absolute;bottom:calc(100% + 8px);left:0;right:0;background:#ffffff;border-radius:18px;box-shadow:0 14px 40px rgba(5,22,65,0.18), 0 2px 8px rgba(0,71,255,0.08);border:1px solid #E2E8F0;padding:12px;z-index:99999;">
+      <div style="display:flex;align-items:center;gap:10px;padding-bottom:10px;border-bottom:1px solid #EEF2F6;margin-bottom:8px;">
+        <span class="s22 menu-user-avatar" style="width:36px;height:36px;border-radius:50%;background:#0047FF;color:#fff;display:grid;place-items:center;font-weight:700;font-size:13px;flex-shrink:0;">MK</span>
+        <div style="overflow:hidden;flex:1;">
+          <div class="menu-user-name" style="font-weight:700;font-size:13px;color:#0F2147;white-space:nowrap;text-overflow:ellipsis;overflow:hidden;">Minh Khoa</div>
+          <div class="menu-user-email" style="font-size:11px;color:#64748B;white-space:nowrap;text-overflow:ellipsis;overflow:hidden;">khoa.nguyen@securedoc.ai</div>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:3px;">
+        <a href="/auth?mode=forgot" style="display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:10px;color:#334155;text-decoration:none;font-size:12px;font-weight:600;transition:all .15s ease;" onmouseover="this.style.background='#F1F5F9'" onmouseout="this.style.background='transparent'">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          Đổi mật khẩu
+        </a>
+        <a href="/auth?mode=signin" style="display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:10px;color:#334155;text-decoration:none;font-size:12px;font-weight:600;transition:all .15s ease;" onmouseover="this.style.background='#F1F5F9'" onmouseout="this.style.background='transparent'">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+          Chuyển tài khoản
+        </a>
+        <button onclick="logoutSecureDocUser(event)" style="display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:10px;color:#EF4444;background:transparent;border:none;width:100%;text-align:left;font-family:inherit;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s ease;" onmouseover="this.style.background='#FEF2F2'" onmouseout="this.style.background='transparent'">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+          Đăng xuất
+        </button>
+      </div>
+    </div>
+  </div>
 </div>
 </aside>
 
@@ -91,7 +126,13 @@
 
 <section class="s86">
 <header class="s87"><h2 class="s88">Live Audit Canvas</h2>
-<button class="s89" id="btn-export-docx"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11M7 11l5 5 5-5M5 20h14"/></svg>Export .docx</button></header>
+<div style="display:flex;align-items:center;gap:10px;">
+  <label title="Khôi phục thông tin gốc (SĐT, CCCD, Email, STK) từ PII Vault khi xuất file Word" style="display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:600;color:#475569;cursor:pointer;background:#F1F5F9;padding:6px 10px;border-radius:999px;border:1px solid #E2E8F0;user-select:none;">
+    <input type="checkbox" id="toggle-restore-pii" style="accent-color:#0047FF;cursor:pointer;">
+    <span>Giải mã PII gốc</span>
+  </label>
+  <button class="s89" id="btn-export-docx"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11M7 11l5 5 5-5M5 20h14"/></svg>Export .docx</button>
+</div></header>
 <div class="card s90">
 <svg width="104" height="104" viewBox="0 0 104 104" role="img" aria-label="Risk Score 72 trên 100"><circle cx="52" cy="52" r="42" fill="none" stroke="#E6EBF7" stroke-width="10"/><circle id="audit-gauge-circle" cx="52" cy="52" r="42" fill="none" stroke="#C2410C" stroke-width="10" stroke-linecap="round" stroke-dasharray="190 264" transform="rotate(-90 52 52)"/><text id="audit-gauge-score" x="52" y="58" text-anchor="middle" font-size="26" font-weight="700" fill="#0F2147" font-family="Inter">72</text></svg>
 <div><p class="h s91">Risk Score / 100</p><div class="s92" id="audit-risk-desc">Rủi ro pháp lý cao</div><div class="s93" id="audit-risk-sub">16 điều khoản được rà soát · cần sửa 3 điều khoản trước khi ký</div></div></div>
@@ -192,6 +233,7 @@
   <button class="ib s62" id="btn-home-narrow-new" title="Cuộc trò chuyện mới" aria-label="New Conversation"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
   <button class="ib" id="btn-home-narrow-search" title="Tìm kiếm" aria-label="Search"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg></button>
   <button class="ib s63" id="btn-home-narrow-pinned" title="Dự án đã ghim" aria-label="Pinned Projects"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h7l4 4v14H7zM14 3v4h4"/></svg></button>
+  <button class="ib btn-open-inspector" id="btn-home-narrow-inspector" style="display:none" title="AI System & RAG Inspector" aria-label="AI System & RAG Inspector"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M9 9h6v6H9zM9 1v3M15 1v3M9 20v3M15 20v3M20 9h3M20 14h3M1 9h3M1 14h3"/></svg></button>
 </div>
 
 <!-- FULL WIDE VIEW (284px) (Mặc định trang chủ) -->
@@ -202,6 +244,7 @@
   </div>
   <button class="s14 btn-full-new" id="btn-home-new"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>New Conversation</button>
   <button class="nav s15" id="btn-home-search"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>Search</button>
+  <button class="nav s15 btn-open-inspector" id="btn-home-inspector" style="display:none"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M9 9h6v6H9z"/></svg>AI System &amp; RAG</button>
   <div class="lbl">Pinned Projects</div>
   <div id="home-pinned-list">
     <button class="nav"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h7l4 4v14H7zM14 3v4h4"/></svg>HĐ thuê văn phòng Q4</button>
@@ -209,7 +252,38 @@
     <button class="nav"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h7l4 4v14H7zM14 3v4h4"/></svg>NDA đối tác Nhật Bản</button>
   </div>
   <div class="s16" style="flex:1"></div>
-  <div class="s21"><span class="s22">NA</span><span class="s20"><b>Nguyễn An</b><span class="s23">an@securedoc.ai</span></span><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></div>
+  <div class="user-profile-slot" style="position:relative;margin-top:14px;">
+    <div class="s21 user-profile-card" onclick="toggleUserProfileMenu(this, event)" title="Hồ sơ tài khoản" style="margin-top:0;">
+      <span class="s22">MK</span>
+      <span class="s20"><b>Minh Khoa</b><span class="s23">khoa.nguyen@securedoc.ai</span></span>
+      <svg class="i chevron-icon" viewBox="0 0 24 24" aria-hidden="true" style="transition:transform .2s ease;"><path d="M6 9l6 6 6-6"/></svg>
+    </div>
+    
+    <!-- Dropdown Menu Tài khoản Người dùng -->
+    <div class="user-profile-dropdown" style="display:none;position:absolute;bottom:calc(100% + 8px);left:0;right:0;background:#ffffff;border-radius:18px;box-shadow:0 14px 40px rgba(5,22,65,0.18), 0 2px 8px rgba(0,71,255,0.08);border:1px solid #E2E8F0;padding:12px;z-index:99999;">
+      <div style="display:flex;align-items:center;gap:10px;padding-bottom:10px;border-bottom:1px solid #EEF2F6;margin-bottom:8px;">
+        <span class="s22 menu-user-avatar" style="width:36px;height:36px;border-radius:50%;background:#0047FF;color:#fff;display:grid;place-items:center;font-weight:700;font-size:13px;flex-shrink:0;">MK</span>
+        <div style="overflow:hidden;flex:1;">
+          <div class="menu-user-name" style="font-weight:700;font-size:13px;color:#0F2147;white-space:nowrap;text-overflow:ellipsis;overflow:hidden;">Minh Khoa</div>
+          <div class="menu-user-email" style="font-size:11px;color:#64748B;white-space:nowrap;text-overflow:ellipsis;overflow:hidden;">khoa.nguyen@securedoc.ai</div>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:3px;">
+        <a href="/auth?mode=forgot" style="display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:10px;color:#334155;text-decoration:none;font-size:12px;font-weight:600;transition:all .15s ease;" onmouseover="this.style.background='#F1F5F9'" onmouseout="this.style.background='transparent'">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          Đổi mật khẩu
+        </a>
+        <a href="/auth?mode=signin" style="display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:10px;color:#334155;text-decoration:none;font-size:12px;font-weight:600;transition:all .15s ease;" onmouseover="this.style.background='#F1F5F9'" onmouseout="this.style.background='transparent'">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+          Chuyển tài khoản
+        </a>
+        <button onclick="logoutSecureDocUser(event)" style="display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:10px;color:#EF4444;background:transparent;border:none;width:100%;text-align:left;font-family:inherit;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s ease;" onmouseover="this.style.background='#FEF2F2'" onmouseout="this.style.background='transparent'">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+          Đăng xuất
+        </button>
+      </div>
+    </div>
+  </div>
 </div>
 </aside>
 
@@ -225,12 +299,12 @@
 <section class="s27">
 <div class="s28">
 <div class="bub s29"><svg width="84" height="84" viewBox="0 0 64 64" aria-hidden="true" class="s30"><path d="M28 10Q30 34 54 36Q30 38 28 62Q26 38 2 36Q26 34 28 10Z" fill="#fff"/><path d="M50 5Q51.3 12.7 59 14Q51.3 15.3 50 23Q48.7 15.3 41 14Q48.7 12.7 50 5Z" fill="#fff"/></svg></div>
-<h1 class="s31">Hỏi đáp &amp; thẩm định tài liệu,<br><em class="s32">bảo mật từ bước đầu tiên</em></h1>
-<p class="s33">Trò chuyện tự do với AI, hoặc tải hợp đồng lên để chấm điểm rủi ro pháp lý.</p>
+<h1 class="s31"><span id="hero-greeting-line">Xin chào, Minh Khoa</span><br><em class="s32" id="hero-tagline">Hôm nay ta thẩm định hợp đồng nào?</em></h1>
+<p class="s33" id="hero-subtitle">Trò chuyện tự do với AI, hoặc tải hợp đồng (.pdf, .docx, ảnh scan) lên để chấm điểm rủi ro pháp lý.</p>
 </div>
 <div class="card s34">
 <label for="q" class="s35">Câu hỏi</label>
-<textarea id="q" rows="2" placeholder="Đặt câu hỏi, hoặc kéo thả hợp đồng (.pdf, .docx, .txt, .csv) vào đây…" class="s36"></textarea>
+<textarea id="q" rows="2" placeholder="Đặt câu hỏi, hoặc kéo thả hợp đồng (.pdf, .docx, .png, .jpg) vào đây…" class="s36"></textarea>
 <div class="s37">
 <button aria-label="Đính kèm tài liệu" class="chip s38 btn-attach-trigger" id="home-attach-btn" type="button"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 11l-8.5 8.5a5 5 0 01-7-7L14 4a3.5 3.5 0 015 5l-8.5 8.5a2 2 0 01-3-3L15 7"/></svg></button>
 <button class="chip s39" id="home-pii-btn" type="button"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l7 3v5c0 5-3.5 8.5-7 10-3.5-1.5-7-5-7-10V6z"/></svg><span id="home-pii-label">PII Guard: On</span></button>
@@ -256,7 +330,241 @@
 </div></div>
 </div>
 
+<!-- ===== AI SYSTEM & RAG INSPECTOR MODAL ===== -->
+<div id="system-inspector-modal" style="display:none;position:fixed;inset:0;z-index:100000;background:rgba(15,23,42,0.52);backdrop-filter:blur(6px);align-items:center;justify-content:center;padding:20px;">
+  <div style="background:#FFFFFF;border-radius:22px;width:min(860px,100%);max-height:86vh;display:flex;flex-direction:column;box-shadow:0 25px 70px rgba(5,22,65,0.28);border:1px solid #E2E8F0;overflow:hidden;">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:18px 24px;border-bottom:1px solid #EEF2F6;background:linear-gradient(135deg,#F8FAFF 0%,#EFF6FF 100%);">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span style="width:34px;height:34px;border-radius:10px;background:#0047FF;color:#fff;display:grid;place-items:center;font-weight:700;">✦</span>
+        <div>
+          <h3 style="margin:0;font-size:16px;font-weight:700;color:#0F2147;">AI System &amp; RAG Inspector</h3>
+          <div style="font-size:12px;color:#64748B;">Observability · Semantic Cache · Vector Legal Knowledge Base</div>
+        </div>
+      </div>
+      <button id="btn-close-inspector" aria-label="Đóng" style="width:32px;height:32px;border-radius:10px;border:1px solid #E2E8F0;background:#fff;color:#475569;font-size:18px;cursor:pointer;display:grid;place-items:center;">&times;</button>
+    </div>
 
-<script src="/static/app.js"></script>
+    <div style="display:flex;gap:8px;padding:12px 24px;border-bottom:1px solid #EEF2F6;background:#FAFCFF;">
+      <button class="inspector-tab active" data-tab="obs" style="padding:8px 14px;border-radius:10px;border:1px solid #0047FF;background:#0047FF;color:#fff;font-size:13px;font-weight:600;cursor:pointer;">📊 Observability &amp; Cache</button>
+      <button class="inspector-tab" data-tab="rag" style="padding:8px 14px;border-radius:10px;border:1px solid #E2E8F0;background:#fff;color:#334155;font-size:13px;font-weight:600;cursor:pointer;">⚖️ Kho Luật Vector RAG</button>
+      <button class="inspector-tab" data-tab="ingest" style="padding:8px 14px;border-radius:10px;border:1px solid #E2E8F0;background:#fff;color:#334155;font-size:13px;font-weight:600;cursor:pointer;">📥 Nạp Luật Mới</button>
+    </div>
+
+    <div style="padding:20px 24px;overflow-y:auto;flex:1;">
+      <!-- TAB 1: OBSERVABILITY & CACHE -->
+      <div id="inspector-pane-obs" class="inspector-pane">
+        <div id="inspector-health-row" style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px;"></div>
+        <div id="inspector-kpi-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:18px;"></div>
+        <div style="display:flex;gap:10px;justify-content:flex-end;">
+          <button id="btn-inspector-refresh" style="padding:9px 16px;border-radius:10px;border:1px solid #CBD5E1;background:#fff;color:#1E293B;font-size:13px;font-weight:600;cursor:pointer;">↻ Làm mới số liệu</button>
+          <button id="btn-inspector-clear-cache" style="padding:9px 16px;border-radius:10px;border:1px solid #FECACA;background:#FEF2F2;color:#DC2626;font-size:13px;font-weight:600;cursor:pointer;">🗑 Xóa Semantic Cache</button>
+        </div>
+      </div>
+
+      <!-- TAB 2: VECTOR RAG SEARCH & LIST -->
+      <div id="inspector-pane-rag" class="inspector-pane" style="display:none;">
+        <div style="display:flex;gap:8px;margin-bottom:14px;">
+          <input id="inspector-rag-query" type="text" placeholder="Thử tìm kiếm Vector RAG (VD: mức phạt vi phạm tối đa 8%, đơn phương chấm dứt...)" style="flex:1;padding:10px 14px;border-radius:12px;border:1px solid #CBD5E1;font-size:13.5px;outline:none;">
+          <button id="btn-inspector-rag-search" style="padding:10px 18px;border-radius:12px;border:none;background:#0047FF;color:#fff;font-size:13px;font-weight:600;cursor:pointer;">Tìm Vector</button>
+        </div>
+        <div id="inspector-rag-results" style="display:flex;flex-direction:column;gap:10px;margin-bottom:18px;"></div>
+        <div style="font-size:12px;font-weight:700;color:#64748B;text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px;">Danh sách toàn bộ điều luật đã lập chỉ mục (<span id="inspector-laws-count">0</span>)</div>
+        <div id="inspector-laws-list" style="display:flex;flex-direction:column;gap:8px;max-height:260px;overflow-y:auto;"></div>
+      </div>
+
+      <!-- TAB 3: INGEST NEW LAWS -->
+      <div id="inspector-pane-ingest" class="inspector-pane" style="display:none;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+          <div style="padding:16px;border-radius:16px;border:1px solid #E2E8F0;background:#F8FAFC;">
+            <h4 style="margin:0 0 6px;font-size:14px;color:#0F2147;">Upload file văn bản luật</h4>
+            <p style="margin:0 0 12px;font-size:12px;color:#64748B;">Hỗ trợ `.json`, `.txt`, `.md`, `.pdf`, `.docx`. Hệ thống sẽ tự động lập chỉ mục Vector ngay lập tức.</p>
+            <input type="file" id="inspector-law-file" accept=".json,.txt,.md,.pdf,.docx" style="width:100%;font-size:12px;margin-bottom:10px;">
+            <button id="btn-inspector-upload-law" style="width:100%;padding:9px;border-radius:10px;border:none;background:#0047FF;color:#fff;font-size:13px;font-weight:600;cursor:pointer;">Nạp file vào Vector DB</button>
+          </div>
+          <div style="padding:16px;border-radius:16px;border:1px solid #E2E8F0;background:#F8FAFC;">
+            <h4 style="margin:0 0 6px;font-size:14px;color:#0F2147;">Đồng bộ luật từ đường dẫn URL</h4>
+            <p style="margin:0 0 12px;font-size:12px;color:#64748B;">Nhập link trang văn bản pháp luật trực tuyến để cào điều khoản tự động vào RAG.</p>
+            <input type="url" id="inspector-law-url" placeholder="https://thuvienphapluat.vn/..." style="width:100%;box-sizing:border-box;padding:9px 12px;border-radius:10px;border:1px solid #CBD5E1;font-size:12.5px;margin-bottom:10px;">
+            <button id="btn-inspector-sync-url" style="width:100%;padding:9px;border-radius:10px;border:none;background:#0F2147;color:#fff;font-size:13px;font-weight:600;cursor:pointer;">Cào &amp; Đồng bộ URL</button>
+          </div>
+        </div>
+        <div id="inspector-ingest-status" style="margin-top:14px;font-size:13px;font-weight:600;color:#0B5A4E;"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="/static/app.js?v=20261120b"></script>
+<script>
+// Bóc tách thông tin người dùng nếu vừa được Supabase OAuth chuyển hướng về
+function parseSupabaseOAuthHash() {
+  const hash = window.location.hash;
+  if (!hash || !hash.includes('access_token=')) return null;
+
+  try {
+    const params = new URLSearchParams(hash.replace('#', ''));
+    const token = params.get('access_token');
+    if (!token) return null;
+
+    const base64Url = token.split('.')[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(atob(base64).split('').map(c => {
+      return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+    }).join(''));
+
+    const data = JSON.parse(jsonPayload);
+    const meta = data.user_metadata || {};
+    const email = data.email || meta.email || 'user@example.com';
+    let name = meta.full_name || meta.name || data.name;
+    if (!name) {
+      name = email.split('@')[0].replace(/[._-]/g, ' ');
+      name = name.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+    }
+
+    let avatar = 'MK';
+    const words = name.trim().split(/\s+/);
+    if (words.length >= 2) {
+      avatar = (words[0][0] + words[words.length - 1][0]).toUpperCase();
+    } else if (words.length === 1) {
+      avatar = words[0].slice(0, 2).toUpperCase();
+    }
+
+    const userObj = {
+      name: name,
+      email: email,
+      avatar: avatar,
+      role: 'Chuyên viên Pháp chế'
+    };
+
+    localStorage.setItem('securedoc_user', JSON.stringify(userObj));
+    localStorage.setItem('securedoc_access_token', token);
+    window.history.replaceState(null, '', window.location.pathname);
+    return userObj;
+  } catch (e) {
+    return null;
+  }
+}
+
+// Quản lý đồng bộ thông tin tài khoản người dùng đăng nhập
+function syncCurrentUserProfile() {
+  parseSupabaseOAuthHash();
+  let user = null;
+  try {
+    const raw = localStorage.getItem('securedoc_user');
+    if (raw) user = JSON.parse(raw);
+  } catch(e) {}
+
+  if (!user || !user.name || !user.email) {
+    user = {
+      name: 'Khách',
+      email: 'Chưa đăng nhập',
+      avatar: 'KH'
+    };
+  }
+
+  document.querySelectorAll('.user-profile-slot').forEach(slot => {
+    const avatarEls = slot.querySelectorAll('.s22');
+    const nameEl = slot.querySelector('.s20 b');
+    const emailEl = slot.querySelector('.s23');
+    const menuNameEl = slot.querySelector('.menu-user-name');
+    const menuEmailEl = slot.querySelector('.menu-user-email');
+
+    avatarEls.forEach(el => el.textContent = user.avatar || 'MK');
+    if (nameEl) nameEl.textContent = user.name;
+    if (emailEl) emailEl.textContent = user.email;
+    if (menuNameEl) menuNameEl.textContent = user.name;
+    if (menuEmailEl) menuEmailEl.textContent = user.email;
+  });
+
+  updateDynamicGreeting(user.name);
+}
+
+// Lời chào động theo khung giờ thực tế & câu gợi ý xoay vòng như ChatGPT / Claude / Gemini
+function updateDynamicGreeting(fullName) {
+  const greetEl = document.getElementById('hero-greeting-line');
+  const tagEl = document.getElementById('hero-tagline');
+  const subEl = document.getElementById('hero-subtitle');
+  if (!greetEl) return;
+
+  const hour = new Date().getHours();
+  let timeGreeting = 'Xin chào';
+  if (hour >= 5 && hour < 11) {
+    timeGreeting = 'Chào buổi sáng';
+  } else if (hour >= 11 && hour < 14) {
+    timeGreeting = 'Chào buổi trưa';
+  } else if (hour >= 14 && hour < 18) {
+    timeGreeting = 'Chào buổi chiều';
+  } else if (hour >= 18 && hour < 22) {
+    timeGreeting = 'Chào buổi tối';
+  } else {
+    timeGreeting = 'Làm việc khuya nhé';
+  }
+
+  let displayName = (fullName || '').trim();
+  if (!displayName) {
+    try {
+      const raw = localStorage.getItem('securedoc_user');
+      if (raw) displayName = (JSON.parse(raw).name || '').trim();
+    } catch (e) {}
+  }
+  displayName = displayName || 'bạn';
+  greetEl.textContent = `${timeGreeting}, ${displayName}`;
+
+  const taglines = [
+    'Hôm nay ta thẩm định hợp đồng nào?',
+    'Sẵn sàng rà soát rủi ro pháp lý cho bạn.',
+    'Bảo mật dữ liệu từ bước đầu tiên.',
+    'Bạn cần đối chiếu điều khoản nào hôm nay?',
+    'Cùng tìm điểm bất lợi trước khi đặt bút ký.',
+  ];
+  const subtitles = [
+    'Trò chuyện tự do với AI, hoặc tải hợp đồng (.pdf, .docx, ảnh scan) lên để chấm điểm rủi ro pháp lý.',
+    'PII Token Vault & Legal Vector RAG đang sẵn sàng — mọi dữ liệu nhạy cảm đều được bảo vệ.',
+    'Tải lên bản thảo hợp đồng hoặc ảnh chụp dấu đỏ để nhận Ma trận 3 kịch bản đàm phán.',
+  ];
+
+  if (tagEl) {
+    tagEl.textContent = taglines[Math.floor(Math.random() * taglines.length)];
+  }
+  if (subEl) {
+    subEl.textContent = subtitles[Math.floor(Math.random() * subtitles.length)];
+  }
+}
+window.updateDynamicGreeting = updateDynamicGreeting;
+
+function toggleUserProfileMenu(btn, e) {
+  if (e) e.stopPropagation();
+  const slot = btn.closest('.user-profile-slot');
+  if (!slot) return;
+  const dropdown = slot.querySelector('.user-profile-dropdown');
+  const chevron = slot.querySelector('.chevron-icon');
+  const isVisible = dropdown.style.display === 'block';
+
+  document.querySelectorAll('.user-profile-dropdown').forEach(d => d.style.display = 'none');
+  document.querySelectorAll('.chevron-icon').forEach(c => c.style.transform = 'rotate(0deg)');
+
+  if (!isVisible) {
+    dropdown.style.display = 'block';
+    if (chevron) chevron.style.transform = 'rotate(180deg)';
+  }
+}
+
+function logoutSecureDocUser(e) {
+  if (e) e.stopPropagation();
+  localStorage.removeItem('securedoc_user');
+  localStorage.removeItem('securedoc_access_token');
+  window.location.href = '/auth?mode=signin';
+}
+
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('.user-profile-slot')) {
+    document.querySelectorAll('.user-profile-dropdown').forEach(d => d.style.display = 'none');
+    document.querySelectorAll('.chevron-icon').forEach(c => c.style.transform = 'rotate(0deg)');
+  }
+});
+
+document.addEventListener('DOMContentLoaded', syncCurrentUserProfile);
+syncCurrentUserProfile();
+</script>
 </body>
 </html>

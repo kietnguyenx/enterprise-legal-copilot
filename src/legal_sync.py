@@ -1,7 +1,9 @@
 # src/legal_sync.py — Online Legal Web Scraper & Vector Ingestion
 import re
 import json
+import socket
 import logging
+import ipaddress
 from pathlib import Path
 from urllib.parse import urlparse
 import httpx
@@ -70,11 +72,36 @@ def extract_articles_from_text(raw_text: str, default_law_name: str) -> list[dic
     return articles
 
 
+def _validate_safe_public_url(url: str):
+    """Chống lỗ hổng SSRF: Chỉ cho phép http/https tới địa chỉ công khai, chặn IP nội bộ/localhost."""
+    parsed = urlparse(url)
+    if parsed.scheme not in ("http", "https") or not parsed.netloc or not parsed.hostname:
+        raise ValueError(f"Đường dẫn URL không hợp lệ (chỉ hỗ trợ http/https công khai): '{url}'")
+
+    hostname = parsed.hostname.lower().strip(".")
+    blocked_hosts = {"localhost", "127.0.0.1", "0.0.0.0", "::1", "metadata.google.internal"}
+    if hostname in blocked_hosts or hostname.endswith(".local") or hostname.endswith(".internal"):
+        raise ValueError("Chặn truy cập địa chỉ nội bộ (SSRF Protection).")
+
+    try:
+        ip_obj = ipaddress.ip_address(hostname)
+        ips_to_check = [ip_obj]
+    except ValueError:
+        try:
+            addr_info = socket.getaddrinfo(hostname, None)
+            ips_to_check = [ipaddress.ip_address(item[4][0]) for item in addr_info]
+        except Exception:
+            ips_to_check = []
+
+    for ip in ips_to_check:
+        if ip.is_private or ip.is_loopback or ip.is_link_local or ip.is_reserved or ip.is_multicast:
+            raise ValueError(f"Chặn truy cập dải IP nội bộ/không công khai ({ip}) (SSRF Protection).")
+    return parsed
+
+
 def sync_law_from_url(url: str, custom_name: str | None = None) -> dict:
     """Tải nội dung từ link web pháp luật, bóc tách và tự động nạp vào Vector DB."""
-    parsed = urlparse(url)
-    if not parsed.scheme or not parsed.netloc:
-        raise ValueError(f"Đường dẫn URL không hợp lệ: '{url}'")
+    parsed = _validate_safe_public_url(url)
 
     headers = {"User-Agent": USER_AGENT}
     try:

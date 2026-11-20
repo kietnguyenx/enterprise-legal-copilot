@@ -46,6 +46,7 @@ class AuditSession(Base):
     __tablename__ = "audit_sessions"
 
     id = Column(String(32), primary_key=True, index=True)  # session id (e.g. 12-char hex)
+    owner_id = Column(String(128), nullable=True, index=True)  # Supabase UID hoặc local user id
     title = Column(String(256), nullable=False)
     file_name = Column(String(256), nullable=True)
     file_size = Column(String(32), nullable=True)

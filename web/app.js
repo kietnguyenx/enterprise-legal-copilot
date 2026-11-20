@@ -4,6 +4,35 @@
 (function() {
   'use strict';
 
+  // Tự động đính kèm Supabase JWT Bearer Token / thông tin User cho mọi API nội bộ
+  const _nativeFetch = window.fetch.bind(window);
+  function getAuthHeaders(extra = {}) {
+    const headers = Object.assign({}, extra);
+    const token = localStorage.getItem('securedoc_access_token');
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    } else {
+      try {
+        const rawUser = localStorage.getItem('securedoc_user');
+        if (rawUser) {
+          const u = JSON.parse(rawUser);
+          if (u && u.email) headers['X-User-Email'] = encodeURIComponent(u.email);
+          if (u && u.name) headers['X-User-Name'] = encodeURIComponent(u.name);
+        }
+      } catch (e) {}
+    }
+    return headers;
+  }
+
+  function fetch(url, options = {}) {
+    if (typeof url === 'string' && url.startsWith('/api/')) {
+      const nextOpts = Object.assign({}, options);
+      nextOpts.headers = getAuthHeaders(options.headers || {});
+      return _nativeFetch(url, nextOpts);
+    }
+    return _nativeFetch(url, options);
+  }
+
   let currentSessionId = null;
   let selectedModel = 'gemini-3.5-flash';
   let piiGuardEnabled = true;
@@ -668,14 +697,19 @@
     });
   }
 
-  // Export .docx
+  // Export .docx (hỗ trợ tùy chọn giải mã PII gốc từ PII Vault)
   if (btnExportDocx) {
     btnExportDocx.addEventListener('click', () => {
       if (!currentSessionId) {
         alert('Chưa chọn phiên làm việc để xuất báo cáo.');
         return;
       }
-      window.location.href = `/api/sessions/${currentSessionId}/export`;
+      const restoreCheckbox = document.getElementById('toggle-restore-pii');
+      const restorePii = restoreCheckbox && restoreCheckbox.checked ? 'true' : 'false';
+      const token = localStorage.getItem('securedoc_access_token');
+      const params = new URLSearchParams({ restore_original_pii: restorePii });
+      if (token) params.set('token', token);
+      window.location.href = `/api/sessions/${currentSessionId}/export?${params.toString()}`;
     });
   }
 
@@ -708,6 +742,9 @@
   const navigateToHome = (e) => {
     if (e) e.preventDefault();
     if (homeTextarea) homeTextarea.value = '';
+    if (typeof window.updateDynamicGreeting === 'function') {
+      window.updateDynamicGreeting();
+    }
     window.location.hash = 'home';
   };
 
@@ -1108,8 +1145,260 @@
       .replace(/\n/g, '<br>');
   }
 
+  // ================= 9. AI SYSTEM & RAG INSPECTOR =================
+  function initSystemInspector() {
+    const modal = document.getElementById('system-inspector-modal');
+    const closeBtn = document.getElementById('btn-close-inspector');
+    const openBtns = document.querySelectorAll('.btn-open-inspector');
+    if (!modal) return;
+
+    const tabs = modal.querySelectorAll('.inspector-tab');
+    const panes = {
+      obs: document.getElementById('inspector-pane-obs'),
+      rag: document.getElementById('inspector-pane-rag'),
+      ingest: document.getElementById('inspector-pane-ingest'),
+    };
+
+    const switchTab = (tabName) => {
+      tabs.forEach(t => {
+        const active = t.dataset.tab === tabName;
+        t.classList.toggle('active', active);
+        t.style.background = active ? '#0047FF' : '#fff';
+        t.style.color = active ? '#fff' : '#334155';
+        t.style.borderColor = active ? '#0047FF' : '#E2E8F0';
+      });
+      Object.entries(panes).forEach(([k, el]) => {
+        if (el) el.style.display = k === tabName ? 'block' : 'none';
+      });
+      if (tabName === 'obs') loadObservability();
+      if (tabName === 'rag') loadLawsList();
+    };
+
+    const loadObservability = async () => {
+      const healthRow = document.getElementById('inspector-health-row');
+      const kpiGrid = document.getElementById('inspector-kpi-grid');
+      if (healthRow) healthRow.innerHTML = '<div style="grid-column:span 3;color:#64748B;font-size:13px;">Đang tải dữ liệu hệ thống...</div>';
+      try {
+        const res = await fetch('/api/health');
+        const h = await res.json();
+        const db = h.database || {};
+        const cache = h.semantic_cache || {};
+        const tel = h.telemetry || {};
+
+        const cardStyle = 'padding:14px;border-radius:14px;border:1px solid #E2E8F0;background:#F8FAFC;';
+        if (healthRow) {
+          healthRow.innerHTML = `
+            <div style="${cardStyle}">
+              <div style="font-size:11px;color:#64748B;font-weight:600;text-transform:uppercase;">Database Engine</div>
+              <div style="font-size:15px;font-weight:700;color:${db.status === 'healthy' ? '#059669' : '#DC2626'};margin-top:4px;">● ${escapeHtml(db.status || 'unknown')}</div>
+              <div style="font-size:11px;color:#64748B;margin-top:2px;">${escapeHtml(db.engine || 'sqlalchemy')}</div>
+            </div>
+            <div style="${cardStyle}">
+              <div style="font-size:11px;color:#64748B;font-weight:600;text-transform:uppercase;">Local Ollama (On-Prem)</div>
+              <div style="font-size:15px;font-weight:700;color:${h.ollama_local === 'available' ? '#059669' : '#D97706'};margin-top:4px;">● ${escapeHtml(h.ollama_local || 'offline')}</div>
+              <div style="font-size:11px;color:#64748B;margin-top:2px;">Hybrid LLM Failover</div>
+            </div>
+            <div style="${cardStyle}">
+              <div style="font-size:11px;color:#64748B;font-weight:600;text-transform:uppercase;">Kho Luật Vector RAG</div>
+              <div style="font-size:18px;font-weight:700;color:#0047FF;margin-top:4px;">${h.vector_rag_laws_count || 0} điều luật</div>
+              <div style="font-size:11px;color:#64748B;margin-top:2px;">Đã lập chỉ mục Cosine</div>
+            </div>
+          `;
+        }
+
+        if (kpiGrid) {
+          kpiGrid.innerHTML = `
+            <div style="${cardStyle}">
+              <div style="font-size:11px;color:#64748B;font-weight:600;">TỔNG REQUEST AI</div>
+              <div style="font-size:20px;font-weight:700;color:#0F2147;margin-top:4px;">${tel.total_requests ?? 0}</div>
+              <div style="font-size:11px;color:#64748B;">Độ trễ p95: <b>${tel.p95_latency_ms ?? 0} ms</b></div>
+            </div>
+            <div style="${cardStyle}">
+              <div style="font-size:11px;color:#64748B;font-weight:600;">SEMANTIC CACHE HIT</div>
+              <div style="font-size:20px;font-weight:700;color:#059669;margin-top:4px;">${cache.hit_rate_pct ?? 0}%</div>
+              <div style="font-size:11px;color:#64748B;">${cache.hits ?? 0} hits / ${cache.total_entries ?? 0} mẫu</div>
+            </div>
+            <div style="${cardStyle}">
+              <div style="font-size:11px;color:#64748B;font-weight:600;">CHI PHÍ &amp; TOKEN</div>
+              <div style="font-size:20px;font-weight:700;color:#0F2147;margin-top:4px;">$${tel.estimated_total_cost_usd ?? 0}</div>
+              <div style="font-size:11px;color:#059669;">Tiết kiệm Cache: <b>$${cache.saved_cost_usd ?? 0}</b></div>
+            </div>
+          `;
+        }
+      } catch (e) {
+        if (healthRow) healthRow.innerHTML = '<div style="grid-column:span 3;color:#DC2626;font-size:13px;">Không tải được số liệu hệ thống.</div>';
+      }
+    };
+
+    const loadLawsList = async () => {
+      const listEl = document.getElementById('inspector-laws-list');
+      const countEl = document.getElementById('inspector-laws-count');
+      if (!listEl) return;
+      try {
+        const res = await fetch('/api/laws/list');
+        const data = await res.json();
+        if (countEl) countEl.textContent = data.total || 0;
+        listEl.innerHTML = (data.laws || []).map(l => `
+          <div style="padding:10px 12px;border-radius:12px;border:1px solid #EEF2F6;background:#FAFCFF;">
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
+              <b style="font-size:12.5px;color:#0F2147;">${escapeHtml(l.law_name)} · ${escapeHtml(l.article)}</b>
+              <span style="font-size:11px;padding:2px 8px;border-radius:999px;background:#EFF6FF;color:#0047FF;font-weight:600;">${escapeHtml(l.category || 'law')}</span>
+            </div>
+            <div style="font-size:12px;color:#334155;font-weight:600;margin-top:3px;">${escapeHtml(l.title)}</div>
+            <div style="font-size:11.5px;color:#64748B;margin-top:2px;">${escapeHtml(l.snippet)}</div>
+          </div>
+        `).join('');
+      } catch (e) {
+        listEl.innerHTML = '<div style="color:#DC2626;font-size:12px;">Lỗi tải danh sách luật.</div>';
+      }
+    };
+
+    const runRagSearch = async () => {
+      const qInput = document.getElementById('inspector-rag-query');
+      const resBox = document.getElementById('inspector-rag-results');
+      const q = qInput ? qInput.value.trim() : '';
+      if (!q || !resBox) return;
+      resBox.innerHTML = '<div style="font-size:12.5px;color:#64748B;">Đang truy xuất Vector RAG...</div>';
+      try {
+        const res = await fetch(`/api/laws/search?q=${encodeURIComponent(q)}&top_k=4`);
+        const data = await res.json();
+        if (!data.results || !data.results.length) {
+          resBox.innerHTML = '<div style="font-size:12.5px;color:#64748B;">Không tìm thấy điều luật phù hợp.</div>';
+          return;
+        }
+        resBox.innerHTML = data.results.map(r => `
+          <div style="padding:11px 13px;border-radius:12px;border:1px solid #BFDBFE;background:#EFF6FF;">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <b style="font-size:13px;color:#0047FF;">⚖️ ${escapeHtml(r.law_name)} — ${escapeHtml(r.article)}</b>
+              <span style="font-size:11px;font-weight:700;color:#059669;background:#DCFCE7;padding:2px 8px;border-radius:999px;">Độ khớp: ${Math.round((r.relevance_score || 0) * 100)}%</span>
+            </div>
+            <div style="font-size:12.5px;font-weight:600;color:#0F2147;margin-top:4px;">${escapeHtml(r.title)}</div>
+            <div style="font-size:12px;color:#334155;margin-top:3px;line-height:1.45;">${escapeHtml((r.content || '').slice(0, 260))}...</div>
+          </div>
+        `).join('');
+      } catch (e) {
+        resBox.innerHTML = '<div style="color:#DC2626;font-size:12.5px;">Lỗi truy vấn Vector RAG.</div>';
+      }
+    };
+
+    openBtns.forEach(btn => btn.addEventListener('click', () => {
+      modal.style.display = 'flex';
+      switchTab('obs');
+    }));
+    if (closeBtn) closeBtn.addEventListener('click', () => { modal.style.display = 'none'; });
+    modal.addEventListener('click', (e) => { if (e.target === modal) modal.style.display = 'none'; });
+    tabs.forEach(t => t.addEventListener('click', () => switchTab(t.dataset.tab)));
+
+    const refreshBtn = document.getElementById('btn-inspector-refresh');
+    if (refreshBtn) refreshBtn.addEventListener('click', loadObservability);
+
+    const clearCacheBtn = document.getElementById('btn-inspector-clear-cache');
+    if (clearCacheBtn) {
+      clearCacheBtn.addEventListener('click', async () => {
+        await fetch('/api/cache/clear', { method: 'POST' });
+        loadObservability();
+      });
+    }
+
+    const searchBtn = document.getElementById('btn-inspector-rag-search');
+    const searchInput = document.getElementById('inspector-rag-query');
+    if (searchBtn) searchBtn.addEventListener('click', runRagSearch);
+    if (searchInput) searchInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') runRagSearch(); });
+
+    const uploadLawBtn = document.getElementById('btn-inspector-upload-law');
+    const statusBox = document.getElementById('inspector-ingest-status');
+    if (uploadLawBtn) {
+      uploadLawBtn.addEventListener('click', async () => {
+        const fileEl = document.getElementById('inspector-law-file');
+        if (!fileEl || !fileEl.files.length) {
+          if (statusBox) statusBox.textContent = '⚠️ Vui lòng chọn file văn bản luật trước.';
+          return;
+        }
+        const fd = new FormData();
+        fd.append('file', fileEl.files[0]);
+        if (statusBox) statusBox.textContent = '⏳ Đang nạp và lập chỉ mục Vector...';
+        try {
+          const res = await fetch('/api/laws/upload', { method: 'POST', body: fd });
+          const data = await res.json();
+          if (res.ok) {
+            if (statusBox) statusBox.textContent = `✅ Đã nạp thành công "${data.file_name}"! Tổng kho RAG: ${data.total_laws_in_db} điều luật.`;
+            loadLawsList();
+          } else {
+            if (statusBox) statusBox.textContent = `❌ Lỗi: ${data.detail || 'Không thể nạp file'}`;
+          }
+        } catch (e) {
+          if (statusBox) statusBox.textContent = '❌ Lỗi kết nối máy chủ.';
+        }
+      });
+    }
+
+    const syncUrlBtn = document.getElementById('btn-inspector-sync-url');
+    if (syncUrlBtn) {
+      syncUrlBtn.addEventListener('click', async () => {
+        const urlEl = document.getElementById('inspector-law-url');
+        const url = urlEl ? urlEl.value.trim() : '';
+        if (!url) {
+          if (statusBox) statusBox.textContent = '⚠️ Vui lòng nhập đường link URL văn bản luật.';
+          return;
+        }
+        if (statusBox) statusBox.textContent = '⏳ Đang cào nội dung luật và đồng bộ Vector DB...';
+        try {
+          const res = await fetch('/api/laws/sync-url', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ url }),
+          });
+          const data = await res.json();
+          if (res.ok) {
+            if (statusBox) statusBox.textContent = `✅ Đồng bộ thành công! Đã thêm ${data.new_articles_added ?? 0} điều luật mới.`;
+            loadLawsList();
+          } else {
+            if (statusBox) statusBox.textContent = `❌ Lỗi: ${data.detail || 'Không thể cào link'}`;
+          }
+        } catch (e) {
+          if (statusBox) statusBox.textContent = '❌ Lỗi kết nối máy chủ.';
+        }
+      });
+    }
+  }
+
   // ================= STARTUP =================
   initModels();
+  initSystemInspector();
+  // Phân quyền RBAC UI: Mặc định ẩn tuyệt đối nút AI System & RAG, chỉ hiện khi Admin được xác thực
+  document.querySelectorAll('.btn-open-inspector').forEach(btn => {
+    btn.classList.remove('is-admin-visible');
+  });
+  fetch('/api/auth/me')
+    .then(r => r.ok ? r.json() : null)
+    .then(me => {
+      if (!me) return;
+      if (me.role === 'admin') {
+        document.querySelectorAll('.btn-open-inspector').forEach(btn => {
+          btn.classList.add('is-admin-visible');
+          btn.style.display = '';
+        });
+      }
+      // Đồng bộ lại tên thật từ Database (tránh bị sai tên thành tiền tố email khi đăng nhập ở InPrivate/máy mới)
+      if (me.is_authenticated && me.name && me.email) {
+        try {
+          const raw = localStorage.getItem('securedoc_user');
+          const cur = raw ? JSON.parse(raw) : {};
+          if (cur.name !== me.name) {
+            const parts = me.name.trim().split(/\s+/);
+            const avatar = parts.length >= 2
+              ? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
+              : me.name.slice(0, 2).toUpperCase();
+            const updated = Object.assign({}, cur, { name: me.name, email: me.email, avatar });
+            localStorage.setItem('securedoc_user', JSON.stringify(updated));
+            if (typeof window.syncCurrentUserProfile === 'function') {
+              window.syncCurrentUserProfile();
+            }
+          }
+        } catch (e) {}
+      }
+    })
+    .catch(() => {});
   loadSessions().then(() => {
     if (window.location.hash === '#audit' && sessionsCache.length) {
       openSession(sessionsCache[0].id);

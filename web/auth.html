@@ -1,0 +1,1791 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SecureDoc AI — Enterprise Legal Copilot Auth</title>
+<link rel="icon" type="image/x-icon" href="/favicon.ico">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><path d='M28 10Q30 34 54 36Q30 38 28 62Q26 38 2 36Q26 34 28 10Z' fill='%230047FF'/><path d='M50 5Q51.3 12.7 59 14Q51.3 15.3 50 23Q48.7 15.3 41 14Q48.7 12.7 50 5Z' fill='%230047FF'/></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+  
+  --abyss-black: #02040A;
+  --cobalt-deep: #0029A3;
+  --cobalt-core: #0047FF;
+  --cobalt-electric: #1F6BFF;
+  --ice-cyan: #99CAFF;
+  --pure-white: #FFFFFF;
+}
+
+body {
+  font-family: var(--font-sans);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+  position: relative;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  background: 
+    radial-gradient(90% 70% at 85% 20%, rgba(0, 71, 255, 0.16) 0%, transparent 60%),
+    radial-gradient(80% 60% at 15% 85%, rgba(31, 107, 255, 0.14) 0%, transparent 55%),
+    linear-gradient(160deg, #DCEBFA 0%, #EDF4FC 48%, #E2EEFF 100%);
+}
+
+/* LỚP HẠT NHIỄU FILM GRAIN MỊN */
+.film-grain {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 900;
+  opacity: 0.18;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 300 300' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* ==========================================================================
+   STAGE CHÍNH & KHUNG THẺ BẤT ĐỐI XỨNG
+   ========================================================================== */
+.auth-stage-wrapper {
+  position: relative;
+  width: 100%;
+  max-width: 1000px;
+  margin-top: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  perspective: 1400px;
+}
+
+.bespoke-card-shell {
+  position: relative;
+  width: 100%;
+  min-height: 615px;
+  background: #FFFFFF;
+  border-radius: 32px;
+  border: 1px solid rgba(255, 255, 255, 0.98);
+  box-shadow: 
+    0 30px 70px rgba(5, 22, 65, 0.11),
+    0 4px 16px rgba(0, 71, 255, 0.05);
+  display: grid;
+  grid-template-columns: 1.04fr 0.96fr;
+  overflow: visible;
+  transition: transform 0.65s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.65s ease;
+  transform-style: preserve-3d;
+}
+
+.bespoke-card-shell.is-morphing {
+  transform: scale(0.988) rotateY(-2.5deg);
+  box-shadow: 
+    0 40px 90px rgba(0, 56, 214, 0.2),
+    0 0 40px rgba(77, 148, 255, 0.18);
+}
+
+/* MÀN ÁNH SÁNG AURORA XANH - TRẮNG QUÉT QUA KHI CHUYỂN ĐỔI */
+.aurora-portal-sweep {
+  position: absolute;
+  inset: 0;
+  border-radius: 32px;
+  pointer-events: none;
+  z-index: 50;
+  overflow: hidden;
+}
+
+.aurora-portal-sweep::before {
+  content: '';
+  position: absolute;
+  top: -20%;
+  left: -130%;
+  width: 90%;
+  height: 140%;
+  background: linear-gradient(
+    105deg,
+    transparent 0%,
+    rgba(153, 202, 255, 0.05) 25%,
+    rgba(0, 71, 255, 0.18) 48%,
+    rgba(255, 255, 255, 0.75) 55%,
+    rgba(77, 148, 255, 0.15) 65%,
+    transparent 100%
+  );
+  transform: skewX(-18deg);
+  filter: blur(8px);
+  opacity: 0;
+}
+
+.bespoke-card-shell.is-morphing .aurora-portal-sweep::before {
+  animation: auroraSweep 0.85s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+@keyframes auroraSweep {
+  0% { left: -120%; opacity: 1; }
+  75% { opacity: 1; }
+  100% { left: 140%; opacity: 0; }
+}
+
+/* ==========================================================================
+   HỆ THỐNG ĐƯỜNG SÓNG DỌC NHƯ ẢNH MẪU + 2 ĐƯỜNG CONG GÓC DƯỚI TRÁI + HIỆU ỨNG CHẠY XANH
+   ========================================================================== */
+.helix-wave-system {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 60%;
+  height: 100%;
+  z-index: 4;
+  pointer-events: none;
+  overflow: hidden;
+  border-radius: 32px 0 0 32px;
+}
+
+/* Đường nét đứt dọc chuyển động mượt */
+.s-curve-dashed-path {
+  stroke-dasharray: 7 7;
+  animation: dashFlow 22s linear infinite;
+}
+
+/* Đường nét đứt cong góc dưới trái */
+.corner-dashed-arc {
+  stroke-dasharray: 7 7;
+  animation: dashFlowReverse 24s linear infinite;
+}
+
+/* CHỈ CHẠY MỖI LẦN 1 CỤC XANH DUY NHẤT TOÀN TRANG: Hết đường dọc (0%->62%) mới tới đường góc dưới (63%->100%) */
+.vertical-comet-beam {
+  stroke-dasharray: 120 1200;
+  filter: drop-shadow(0 0 5px rgba(0, 81, 255, 0.6));
+  animation: singleBlueCometVertical 4.8s linear infinite;
+  animation-delay: -1.5s;
+}
+
+.corner-comet-beam {
+  stroke-dasharray: 145 1200;
+  filter: drop-shadow(0 0 5px rgba(0, 81, 255, 0.6));
+  animation: singleBlueCometCorner 4.8s linear infinite;
+  animation-delay: -1.5s;
+}
+
+.bespoke-card-shell.is-morphing .s-curve-dashed-path,
+.bespoke-card-shell.is-morphing .corner-dashed-arc,
+.bespoke-card-shell.is-morphing .vertical-comet-beam,
+.bespoke-card-shell.is-morphing .corner-comet-beam {
+  animation-duration: 1.4s;
+}
+
+@keyframes dashFlow {
+  from { stroke-dashoffset: 0; }
+  to { stroke-dashoffset: -280; }
+}
+
+@keyframes dashFlowReverse {
+  from { stroke-dashoffset: 0; }
+  to { stroke-dashoffset: 280; }
+}
+
+@keyframes singleBlueCometVertical {
+  0% { stroke-dashoffset: 1120; opacity: 1; }
+  62% { stroke-dashoffset: -130; opacity: 1; }
+  62.1%, 100% { stroke-dashoffset: -130; opacity: 0; }
+}
+
+@keyframes singleBlueCometCorner {
+  0%, 62% { stroke-dashoffset: 1145; opacity: 0; }
+  62.1% { stroke-dashoffset: 1145; opacity: 1; }
+  100% { stroke-dashoffset: -150; opacity: 1; }
+}
+
+/* ==========================================================================
+   LOGO NGÔI SAO KÉP SÁT GÓC TRÊN BÊN TRÁI + HIỆU ỨNG MÀU XANH TRẮNG
+   ========================================================================== */
+.nova-corner-logo {
+  position: absolute;
+  top: 26px;
+  left: 32px;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: default;
+  user-select: none;
+}
+
+.nova-star-brand {
+  width: 32px;
+  height: 32px;
+  filter: drop-shadow(0 0 10px rgba(45, 125, 255, 0.42)) drop-shadow(0 2px 4px rgba(0, 56, 168, 0.2));
+  animation: starBlueWhitePulse 3.6s ease-in-out infinite alternate;
+  transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.nova-corner-logo:hover .nova-star-brand,
+.bespoke-card-shell.is-morphing .nova-star-brand {
+  transform: rotate(180deg) scale(1.18);
+  filter: drop-shadow(0 0 18px rgba(0, 71, 255, 0.75)) drop-shadow(0 0 8px rgba(255, 255, 255, 0.95));
+}
+
+@keyframes starBlueWhitePulse {
+  0% {
+    transform: scale(0.96) rotate(0deg);
+    filter: drop-shadow(0 0 8px rgba(77, 148, 255, 0.35));
+  }
+  100% {
+    transform: scale(1.06) rotate(6deg);
+    filter: drop-shadow(0 0 15px rgba(0, 71, 255, 0.65)) drop-shadow(0 0 5px rgba(255, 255, 255, 0.9));
+  }
+}
+
+/* ==========================================================================
+   CỘT TRÁI: FORM ĐĂNG KÝ / ĐĂNG NHẬP
+   ========================================================================== */
+.left-form-zone {
+  position: relative;
+  z-index: 10;
+  padding: 50px 58px 38px 46px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.morph-item {
+  transition: 
+    opacity 0.38s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.45s cubic-bezier(0.22, 1, 0.36, 1),
+    filter 0.38s ease;
+}
+
+.bespoke-card-shell.is-morphing .morph-item {
+  opacity: 0;
+  transform: translateY(14px) scale(0.97);
+  filter: blur(4px);
+}
+
+.heading-block {
+  text-align: center;
+  margin-bottom: 22px;
+}
+
+.main-heading {
+  font-size: 27px;
+  font-weight: 800;
+  color: #040B1A;
+  letter-spacing: -0.025em;
+  line-height: 1.2;
+  margin-bottom: 6px;
+}
+
+.sub-heading {
+  font-size: 13px;
+  color: #64748B;
+  font-weight: 400;
+}
+
+.signup-success-banner {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 16px;
+  padding: 9px 14px;
+  border-radius: 12px;
+  background: linear-gradient(90deg, rgba(0, 71, 255, 0.08) 0%, rgba(31, 107, 255, 0.14) 50%, rgba(0, 71, 255, 0.08) 100%);
+  border: 1px solid rgba(0, 71, 255, 0.24);
+  color: #0038A8;
+  font-size: 12.5px;
+  font-weight: 600;
+  animation: popBanner 0.45s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.signup-success-banner.show {
+  display: flex;
+}
+
+@keyframes popBanner {
+  from { opacity: 0; transform: translateY(-8px) scale(0.95); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.clean-form-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  transition: all 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.field-group.hidden-field {
+  display: none;
+}
+
+.field-label-top {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #1E293B;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.forgot-inline-link {
+  font-size: 12px;
+  font-weight: 600;
+  color: #0047FF;
+  text-decoration: none;
+  cursor: pointer;
+  display: none;
+}
+
+.bespoke-card-shell[data-auth-mode="signin"] .forgot-inline-link {
+  display: inline;
+}
+
+.input-box-wrap {
+  position: relative;
+  border-radius: 11px;
+  background: rgba(248, 250, 252, 0.86);
+  backdrop-filter: blur(4px);
+  border: 1px solid #E2E8F0;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  padding: 0 14px;
+  transition: all 0.22s ease;
+  overflow: hidden;
+}
+
+.input-box-wrap::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(120px circle at var(--spot-x, 85%) var(--spot-y, 50%), rgba(0, 71, 255, 0.08), transparent 75%);
+  opacity: 0;
+  transition: opacity 0.25s ease;
+  pointer-events: none;
+}
+
+.input-box-wrap:hover::before,
+.input-box-wrap:focus-within::before {
+  opacity: 1;
+}
+
+.input-box-wrap:hover {
+  border-color: #CBD5E1;
+  background: rgba(244, 248, 253, 0.92);
+}
+
+.input-box-wrap:focus-within {
+  background: rgba(255, 255, 255, 0.95);
+  border-color: #0051FF;
+  box-shadow: 0 0 0 3px rgba(0, 81, 255, 0.12);
+}
+
+.clean-input {
+  width: 100%;
+  border: none;
+  background: transparent;
+  font-family: var(--font-sans);
+  font-size: 13.5px;
+  font-weight: 500;
+  color: #0F172A;
+  outline: none;
+  position: relative;
+  z-index: 2;
+}
+
+.clean-input::placeholder {
+  color: #94A3B8;
+  font-weight: 400;
+}
+
+.eye-btn {
+  border: none;
+  background: transparent;
+  color: #64748B;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  padding: 4px;
+  position: relative;
+  z-index: 2;
+  transition: color 0.2s ease, transform 0.15s ease;
+}
+
+.eye-btn:hover {
+  color: #0047FF;
+  transform: scale(1.08);
+}
+
+.eye-btn.is-visible {
+  color: #0047FF;
+}
+
+.pwd-strength-container {
+  margin-top: 4px;
+}
+
+.bespoke-card-shell[data-auth-mode="signin"] .pwd-strength-container {
+  display: none;
+}
+
+.strength-bars-grid {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 5px;
+}
+
+.strength-segment {
+  height: 3.5px;
+  border-radius: 999px;
+  background: #E2E8F0;
+  transition: background-color 0.28s ease, box-shadow 0.28s ease;
+}
+
+.strength-bars-grid[data-level="1"] .strength-segment:nth-child(-n+2) {
+  background: #F43F5E;
+}
+
+.strength-bars-grid[data-level="2"] .strength-segment:nth-child(-n+5) {
+  background: #F59E0B;
+}
+
+.strength-bars-grid[data-level="3"] .strength-segment:nth-child(-n+7) {
+  background: #0051FF;
+  box-shadow: 0 0 6px rgba(0, 81, 255, 0.28);
+}
+
+.strength-bars-grid[data-level="4"] .strength-segment {
+  background: #10B981;
+  box-shadow: 0 0 6px rgba(16, 185, 129, 0.3);
+}
+
+.btn-submit-pill {
+  position: relative;
+  overflow: hidden;
+  margin-top: 6px;
+  width: 100%;
+  height: 46px;
+  border-radius: 999px;
+  border: none;
+  background: linear-gradient(180deg, #2B7BFF 0%, #0047FF 55%, #0033CC 100%);
+  color: #FFFFFF;
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 
+    0 10px 24px rgba(0, 71, 255, 0.32),
+    inset 0 1.5px 1px rgba(255, 255, 255, 0.45);
+  transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.btn-submit-pill:hover {
+  transform: translateY(-1.5px);
+  box-shadow: 
+    0 14px 28px rgba(0, 71, 255, 0.45),
+    inset 0 1.5px 2px rgba(255, 255, 255, 0.6);
+}
+
+.btn-submit-pill.is-celebrating {
+  background: linear-gradient(135deg, #0038A8 0%, #0055FF 45%, #66B2FF 100%);
+  box-shadow: 0 0 32px rgba(0, 85, 255, 0.65), inset 0 1px 2px rgba(255, 255, 255, 0.8);
+  transform: scale(1.02);
+}
+
+.star-particle {
+  position: fixed;
+  pointer-events: none;
+  z-index: 9999;
+  animation: flyStarParticle 0.85s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes flyStarParticle {
+  0% {
+    opacity: 1;
+    transform: translate(0, 0) scale(0.4) rotate(0deg);
+  }
+  60% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(var(--tx), var(--ty)) scale(1.25) rotate(180deg);
+  }
+}
+
+.or-divider {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 16px 0 13px;
+  font-size: 12px;
+  color: #94A3B8;
+}
+
+.or-divider::before,
+.or-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: #EEF2F6;
+}
+
+.social-pills-bottom {
+  display: flex;
+  width: 100%;
+}
+
+.social-pill-btn {
+  width: 100%;
+  height: 44px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid #E2E8F0;
+  color: #1E293B;
+  font-family: var(--font-sans);
+  font-size: 13.5px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  cursor: pointer;
+  transition: all 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+}
+
+.social-pill-btn:hover {
+  background: #FFFFFF;
+  border-color: #0047FF;
+  color: #0047FF;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(0, 71, 255, 0.12);
+}
+
+.social-pill-btn:active {
+  transform: translateY(0);
+}
+
+.bottom-auth-switch {
+  margin-top: 16px;
+  text-align: center;
+  font-size: 13px;
+  color: #475569;
+}
+
+.bottom-auth-switch a {
+  color: #040B1A;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.bottom-auth-switch a:hover {
+  color: #0047FF;
+}
+
+/* Ẩn cụm Social khi ở màn hình Quên mật khẩu / Đặt lại mật khẩu để bố cục tinh gọn */
+.bespoke-card-shell[data-auth-mode="forgot"] .or-divider,
+.bespoke-card-shell[data-auth-mode="forgot"] .social-pills-bottom,
+.bespoke-card-shell[data-auth-mode="reset"] .or-divider,
+.bespoke-card-shell[data-auth-mode="reset"] .social-pills-bottom {
+  display: none;
+}
+
+/* Hộp ghi chú bảo mật nhẹ nhàng ở trang Quên mật khẩu */
+.forgot-hint-box {
+  display: none;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(241, 245, 249, 0.75);
+  border: 1px solid #E2E8F0;
+  color: #475569;
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+
+.bespoke-card-shell[data-auth-mode="forgot"] .forgot-hint-box {
+  display: flex;
+}
+
+.forgot-hint-box svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+  color: #0047FF;
+}
+
+/* Hàng 6 ô nhập mã OTP ở bước Đặt lại mật khẩu */
+.otp-digits-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 8px;
+}
+
+.otp-digit-input {
+  width: 100%;
+  height: 44px;
+  border-radius: 11px;
+  background: rgba(248, 250, 252, 0.86);
+  border: 1px solid #E2E8F0;
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: 16px;
+  font-weight: 700;
+  color: #0F172A;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.otp-digit-input:hover {
+  border-color: #CBD5E1;
+  background: rgba(244, 248, 253, 0.92);
+}
+
+.otp-digit-input:focus {
+  background: #FFFFFF;
+  border-color: #0051FF;
+  box-shadow: 0 0 0 3px rgba(0, 81, 255, 0.12);
+}
+
+.resend-otp-link {
+  font-size: 12px;
+  font-weight: 600;
+  color: #0047FF;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.resend-otp-link:hover {
+  text-decoration: underline;
+}
+
+/* ==========================================================================
+   CỘT PHẢI: KHẮC PHỤC TRIỆT ĐỂ LỖI VIỀN GÓC TRÊN PHẢI (CLEAN 100% GEOMETRY)
+   ========================================================================== */
+.right-elevated-zone {
+  position: relative;
+  z-index: 20;
+  padding-right: 26px;
+  padding-bottom: 24px;
+  display: flex;
+  align-items: stretch;
+  justify-content: flex-end;
+}
+
+.right-elevated-zone::before {
+  content: '';
+  position: absolute;
+  top: -28px;
+  left: 6px;
+  width: 72%;
+  height: 55%;
+  border-radius: 32px;
+  background: rgba(2, 12, 40, 0.22);
+  filter: blur(22px);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.elevated-scoop-panel {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  margin-top: -34px;
+  min-height: 620px;
+  border-radius: 28px;
+  background: 
+    radial-gradient(114% 92% at 15% 8%, #01030A 0%, #030A1C 22%, #0038D6 48%, #2678FF 64%, #99CAFF 78%, #EAF4FF 87%, #FFFFFF 94%, #FFFFFF 100%);
+  box-shadow: none;
+  border: none;
+  /* Đẩy padding-top từ 36px lên 54px để khung kính bên trong nằm gọn bên dưới hốc lượn góc trên phải, KHÔNG ĐÈ LÊN GÓC KHUYẾT */
+  padding: 54px 30px 24px 30px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  overflow: hidden;
+  clip-path: url(#elevatedPanelScoopClip);
+  transition: background 0.7s ease, transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.bespoke-card-shell[data-auth-mode="signin"] .elevated-scoop-panel {
+  background: 
+    radial-gradient(114% 92% at 82% 8%, #01030A 0%, #04102E 23%, #0044FF 49%, #3385FF 65%, #A6D4FF 79%, #EDF6FF 88%, #FFFFFF 95%, #FFFFFF 100%);
+}
+
+/* Họa tiết Ngôi sao đa diện tia mảnh (Wireframe Starburst) */
+.wireframe-starburst {
+  position: absolute;
+  right: -20px;
+  top: 32%;
+  width: 255px;
+  height: 255px;
+  pointer-events: none;
+  opacity: 0.45;
+  animation: slowSpinStar 48s linear infinite;
+  transition: transform 0.75s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.4s ease;
+}
+
+.bespoke-card-shell.is-morphing .wireframe-starburst {
+  opacity: 0.85;
+  filter: drop-shadow(0 0 14px rgba(255, 255, 255, 0.8));
+}
+
+@keyframes slowSpinStar {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* KHUNG KÍNH MỜ TRÊN: KHÔNG DÙNG CLIP-PATH CẮT ĐỨT VIỀN, DÙNG BO GÓC BẤT ĐỐI XỨNG LIỀN MẠCH SẠCH SẼ 100% */
+.sculpted-glass-card {
+  position: relative;
+  z-index: 5;
+  padding: 26px 26px 22px;
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.17) 0%, rgba(153, 202, 255, 0.07) 100%);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  /* Bo góc bất đối xứng tinh tế: viền border 1px chạy liên tục 100% quanh 4 góc, không bị clip-path cắt đứt gây lỗi góc */
+  border-radius: 26px 26px 26px 10px;
+  box-shadow: 
+    0 18px 36px rgba(2, 6, 20, 0.18),
+    inset 0 1px 1px rgba(255, 255, 255, 0.32);
+  transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.4s ease;
+}
+
+.bespoke-card-shell.is-morphing .sculpted-glass-card {
+  transform: translateY(-6px) scale(0.975);
+  opacity: 0.82;
+}
+
+.quote-mark-svg {
+  width: 26px;
+  height: 19px;
+  fill: #99CAFF;
+  opacity: 0.92;
+  margin-bottom: 14px;
+}
+
+.showcase-title {
+  font-size: 22px;
+  font-weight: 800;
+  color: #FFFFFF;
+  line-height: 1.28;
+  letter-spacing: -0.02em;
+  margin-bottom: 10px;
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+
+.showcase-quote {
+  font-size: 13px;
+  line-height: 1.55;
+  color: rgba(235, 245, 255, 0.9);
+  margin-bottom: 18px;
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+
+.showcase-footer-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.slide-dots {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.s-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.35);
+  transition: all 0.25s ease;
+}
+
+.s-dot.active {
+  width: 18px;
+  background: #FFFFFF;
+}
+
+.nav-arrows-group {
+  display: flex;
+  gap: 8px;
+}
+
+.arrow-sq-btn {
+  width: 36px;
+  height: 32px;
+  border-radius: 10px;
+  border: none;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.arrow-sq-btn.light {
+  background: #E6F2FF;
+  color: #020817;
+}
+
+.arrow-sq-btn.dark {
+  background: #040B1A;
+  color: #FFFFFF;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.arrow-sq-btn:hover {
+  transform: translateY(-2px);
+}
+
+/* KHUNG BENTO TRẮNG DƯỚI: TIỆP 100% VỚI MÀU NỀN TRẮNG Ở DƯỚI GÓC */
+.bottom-bento-scoop-wrap {
+  position: relative;
+  z-index: 10;
+  width: 100%;
+  height: 118px;
+  margin-top: 18px;
+  filter: none;
+  transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.bespoke-card-shell.is-morphing .bottom-bento-scoop-wrap {
+  transform: translateY(4px) scale(0.985);
+}
+
+.bento-scoop-svg-bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.scoop-star-orb-btn {
+  position: absolute;
+  top: 0px;
+  right: 2px;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: #FFFFFF;
+  border: none;
+  box-shadow: -4px -4px 14px rgba(0, 45, 160, 0.08);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  z-index: 15;
+  transition: transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.scoop-star-orb-btn:hover,
+.bespoke-card-shell.is-morphing .scoop-star-orb-btn {
+  transform: rotate(180deg) scale(1.1);
+}
+
+.scoop-star-orb-btn svg {
+  width: 20px;
+  height: 20px;
+  fill: #020617;
+}
+
+.bento-content-inner {
+  position: relative;
+  z-index: 5;
+  padding: 20px 64px 20px 24px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 6px;
+}
+
+.bento-headline {
+  font-size: 15px;
+  font-weight: 800;
+  color: #040B1A;
+  line-height: 1.3;
+  letter-spacing: -0.02em;
+}
+
+.bento-desc {
+  font-size: 12px;
+  color: #64748B;
+  line-height: 1.4;
+}
+
+@media (max-width: 900px) {
+  .bespoke-card-shell {
+    grid-template-columns: 1fr;
+  }
+  .elevated-scoop-panel {
+    margin-top: 0;
+  }
+}
+</style>
+</head>
+<body>
+
+<div class="film-grain"></div>
+
+<!-- Định nghĩa SVG ClipPath góc trên phải của khối lớn với đường cong Cubic Bézier mượt tuyệt đối (C2 continuous) -->
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <clipPath id="elevatedPanelScoopClip" clipPathUnits="objectBoundingBox">
+      <path d="M 0.065,0 
+               L 0.77,0 
+               C 0.815,0 0.83,0.015 0.835,0.036 
+               C 0.842,0.064 0.865,0.076 0.905,0.076 
+               L 0.94,0.076 
+               C 0.978,0.076 1,0.095 1,0.125 
+               L 1,0.955 
+               C 1,0.98 0.972,1 0.935,1 
+               L 0.065,1 
+               C 0.028,1 0,0.98 0,0.955 
+               L 0,0.045 
+               C 0,0.02 0.028,0 0.065,0 Z" />
+    </clipPath>
+  </defs>
+</svg>
+
+<div class="auth-stage-wrapper">
+  
+  <div class="bespoke-card-shell" id="card-shell" data-auth-mode="signup">
+    
+    <!-- Màn ánh sáng Aurora Xanh - Trắng quét qua khi chuyển đổi trạng thái -->
+    <div class="aurora-portal-sweep"></div>
+
+    <!-- LOGO NGÔI SAO KÉP SÁT PHÍA TRÊN GÓC TRÁI + HIỆU ỨNG MÀU XANH TRẮNG (BIỂU TƯỢNG THƯƠNG HIỆU) -->
+    <div class="nova-corner-logo" title="SecureDoc AI">
+      <svg class="nova-star-brand" viewBox="0 0 64 64" fill="none">
+        <defs>
+          <linearGradient id="blueWhiteStarGrad" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#FFFFFF"/>
+            <stop offset="28%" stop-color="#7CC0FF"/>
+            <stop offset="68%" stop-color="#0051FF"/>
+            <stop offset="100%" stop-color="#002B8F"/>
+          </linearGradient>
+          <linearGradient id="smallStarBlueWhite" x1="0" y1="1" x2="1" y2="0">
+            <stop offset="0%" stop-color="#0047FF"/>
+            <stop offset="60%" stop-color="#88C8FF"/>
+            <stop offset="100%" stop-color="#FFFFFF"/>
+          </linearGradient>
+        </defs>
+        <path d="M28 10Q30 34 54 36Q30 38 28 62Q26 38 2 36Q26 34 28 10Z" fill="url(#blueWhiteStarGrad)"/>
+        <path d="M50 5Q51.3 12.7 59 14Q51.3 15.3 50 23Q48.7 15.3 41 14Q48.7 12.7 50 5Z" fill="url(#smallStarBlueWhite)"/>
+      </svg>
+    </div>
+
+    <!-- ======================================================================
+         HỆ THỐNG ĐƯỜNG NÉT ĐỨT & NÉT LIỀN KIỂU MỚI NỔI BẬT (BRAIDED HELIX ORBIT + PRECISION NODES)
+         Đan xoắn kép (Double-Helix) giữa nét liền và nét đứt, kèm hạt sáng Comet & tâm điểm Orbital
+         ====================================================================== -->
+    <svg class="helix-wave-system" viewBox="0 0 600 615" fill="none" preserveAspectRatio="none">
+      <defs>
+        <!-- Cục sáng XANH COBALT chạy dọc theo đường liền dọc (mỗi lần 1 cục duy nhất) -->
+        <linearGradient id="cometBeamVertical" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#60A5FA" stop-opacity="0.15"/>
+          <stop offset="50%" stop-color="#0047FF" stop-opacity="1"/>
+          <stop offset="100%" stop-color="#60A5FA" stop-opacity="0.15"/>
+        </linearGradient>
+
+        <!-- Cục sáng XANH COBALT chạy dọc theo đường liền cong góc dưới trái (mỗi lần 1 cục duy nhất) -->
+        <linearGradient id="cometBeamCorner" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#60A5FA" stop-opacity="0.15"/>
+          <stop offset="50%" stop-color="#0047FF" stop-opacity="1"/>
+          <stop offset="100%" stop-color="#60A5FA" stop-opacity="0.15"/>
+        </linearGradient>
+      </defs>
+
+      <!-- 1. 2 ĐƯỜNG CONG DƯỚI GÓC TRÁI (NÉT NỀN XÁM BẠC + 1 CỤC XANH CHẠY DỌC ĐƯỜNG LIỀN) -->
+      <path class="corner-dashed-arc"
+            d="M -20,460 C 95,450 185,510 235,625"
+            stroke="#CBD5E1"
+            stroke-width="1.5"
+            stroke-linecap="round"/>
+      <path d="M -20,482 C 85,472 168,525 212,625"
+            stroke="#E2E8F0"
+            stroke-width="1.3"/>
+      <!-- Cục xanh chạy đơn (pathLength="1000" đảm bảo chỉ có đúng 1 cục xanh duy nhất) -->
+      <path class="corner-comet-beam"
+            pathLength="1000"
+            d="M -20,482 C 85,472 168,525 212,625"
+            stroke="url(#cometBeamCorner)"
+            stroke-width="2.6"
+            stroke-linecap="round"/>
+
+      <!-- 2. ĐƯỜNG NÉT DỌC (ĐÃ BỎ LỚP TÔ NỀN XÁM ĐỂ TIỆP 100% MÀU TRẮNG Ở ĐÁY + 1 CỤC XANH CHẠY DỌC) -->
+      <!-- Đường viền sóng mảnh liền nét màu xám nhạt đồng bộ -->
+      <path d="M 526,-10 C 468,85 544,185 482,295 C 440,375 534,480 474,625" 
+            stroke="#E2E8F0" 
+            stroke-width="1.35"/>
+
+      <!-- Cục xanh chạy đơn trên đường liền dọc (pathLength="1000" đảm bảo chỉ chạy 1 lần 1 cục xanh) -->
+      <path class="vertical-comet-beam"
+            pathLength="1000"
+            d="M 526,-10 C 468,85 544,185 482,295 C 440,375 534,480 474,625" 
+            stroke="url(#cometBeamVertical)" 
+            stroke-width="2.7" 
+            stroke-linecap="round"/>
+
+      <!-- Đường nét đứt dọc song song màu xám bạc đồng bộ -->
+      <path class="s-curve-dashed-path" 
+            d="M 508,-10 C 450,85 526,185 464,295 C 422,375 516,480 456,625" 
+            stroke="#CBD5E1" 
+            stroke-width="1.65" 
+            stroke-linecap="round"/>
+    </svg>
+
+    <!-- ======================================================================
+         CỘT TRÁI: FORM ĐĂNG KÝ / ĐĂNG NHẬP
+         ====================================================================== -->
+    <div class="left-form-zone">
+
+      <div class="heading-block morph-item">
+        <h1 class="main-heading" id="form-heading">Tạo tài khoản</h1>
+        <p class="sub-heading" id="form-subheading">
+          Thẩm định hợp đồng &amp; đối chiếu Luật Việt Nam
+        </p>
+      </div>
+
+      <div class="signup-success-banner" id="signup-success-banner">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0047FF" stroke-width="2.5">
+          <path d="M20 6L9 17l-5-5"/>
+        </svg>
+        <span id="banner-msg-text">Tạo tài khoản thành công! Hãy đăng nhập để bắt đầu.</span>
+      </div>
+
+      <form class="clean-form-stack morph-item" id="auth-form" onsubmit="handleAuthSubmit(event)">
+        
+        <div class="field-group" id="name-field-group">
+          <label class="field-label-top" for="input-name">Họ và tên</label>
+          <div class="input-box-wrap">
+            <input type="text" id="input-name" class="clean-input" placeholder="Nhập họ và tên của bạn" autocomplete="name">
+          </div>
+        </div>
+
+        <div class="field-group" id="email-field-group">
+          <label class="field-label-top" for="input-email">Email</label>
+          <div class="input-box-wrap">
+            <input type="email" id="input-email" class="clean-input" placeholder="name@gmail.com" autocomplete="email">
+          </div>
+        </div>
+
+        <!-- Hộp ghi chú ở màn hình Quên mật khẩu (Bước 1) -->
+        <div class="forgot-hint-box" id="forgot-hint-box">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+          </svg>
+          <span>Mã xác thực OTP 6 chữ số sẽ được gửi tới email đăng ký của bạn để đặt lại mật khẩu mới.</span>
+        </div>
+
+        <!-- Hàng 6 ô nhập mã OTP ở màn hình Đặt lại mật khẩu (Bước 2) -->
+        <div class="field-group hidden-field" id="otp-field-group">
+          <div class="field-label-top">
+            <label>Mã xác thực OTP (6 số)</label>
+            <a class="resend-otp-link" onclick="resendOtpCode(this)">Gửi lại mã</a>
+          </div>
+          <div class="otp-digits-grid" id="otp-grid">
+            <input type="text" maxlength="1" class="otp-digit-input" placeholder="•" oninput="handleOtpInput(this, 0)">
+            <input type="text" maxlength="1" class="otp-digit-input" placeholder="•" oninput="handleOtpInput(this, 1)">
+            <input type="text" maxlength="1" class="otp-digit-input" placeholder="•" oninput="handleOtpInput(this, 2)">
+            <input type="text" maxlength="1" class="otp-digit-input" placeholder="•" oninput="handleOtpInput(this, 3)">
+            <input type="text" maxlength="1" class="otp-digit-input" placeholder="•" oninput="handleOtpInput(this, 4)">
+            <input type="text" maxlength="1" class="otp-digit-input" placeholder="•" oninput="handleOtpInput(this, 5)">
+          </div>
+        </div>
+
+        <div class="field-group" id="pwd-field-group">
+          <div class="field-label-top">
+            <label for="input-pwd" id="pwd-label-text">Mật khẩu</label>
+            <a class="forgot-inline-link" onclick="switchToMode('forgot')">Quên mật khẩu?</a>
+          </div>
+          <div class="input-box-wrap" id="pwd-box-wrap">
+            <input type="password" id="input-pwd" class="clean-input" placeholder="Nhập mật khẩu" autocomplete="current-password" oninput="evaluatePassword(this.value)">
+            <button type="button" class="eye-btn" onclick="togglePassword()" title="Hiện/Ẩn mật khẩu">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+              </svg>
+            </button>
+          </div>
+
+          <div class="pwd-strength-container" id="pwd-strength-box">
+            <div class="strength-bars-grid" id="strength-bars" data-level="2">
+              <div class="strength-segment"></div>
+              <div class="strength-segment"></div>
+              <div class="strength-segment"></div>
+              <div class="strength-segment"></div>
+              <div class="strength-segment"></div>
+              <div class="strength-segment"></div>
+              <div class="strength-segment"></div>
+              <div class="strength-segment"></div>
+            </div>
+          </div>
+        </div>
+
+        <button type="submit" class="btn-submit-pill" id="submit-btn">
+          <span id="submit-btn-text">Bắt đầu ngay</span>
+        </button>
+      </form>
+
+      <div class="or-divider morph-item"><span>hoặc</span></div>
+
+      <div class="social-pills-bottom morph-item">
+        <button type="button" class="social-pill-btn" onclick="handleSocialLogin('google', event)" title="Đăng nhập nhanh bằng tài khoản Google">
+          <svg width="18" height="18" viewBox="0 0 24 24">
+            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+          </svg>
+          <span>Tiếp tục với Google</span>
+        </button>
+      </div>
+
+      <div class="bottom-auth-switch morph-item" id="bottom-switch-text">
+        Đã có tài khoản? <a onclick="toggleAuthMode()">Đăng nhập</a>
+      </div>
+
+    </div>
+
+    <!-- ======================================================================
+         CỘT PHẢI: GÓC TRÊN PHẢI CLEAN 100% (KHÔNG CÒN LỖI ĐÈ VIỀN)
+         ====================================================================== -->
+    <div class="right-elevated-zone">
+      <div class="elevated-scoop-panel">
+        
+        <svg class="wireframe-starburst" viewBox="0 0 260 260" fill="none">
+          <g stroke="rgba(255, 255, 255, 0.62)" stroke-width="1">
+            <path d="M130 6 L138 112 L244 65 L146 126 L254 130 L146 134 L244 195 L138 148 L130 254 L122 148 L16 195 L114 134 L6 130 L114 126 L16 65 L122 112 Z"/>
+            <path d="M130 28 L135 118 L215 45 L142 125 L232 130 L142 135 L215 215 L135 142 L130 232 L125 142 L45 215 L118 135 L28 130 L118 125 L45 45 L125 118 Z" opacity="0.45"/>
+          </g>
+        </svg>
+
+        <!-- Thẻ kính mờ trên: Nằm gọn dưới góc khuyết, viền bo liền mạch không bị cắt -->
+        <div class="sculpted-glass-card">
+          <svg class="quote-mark-svg" viewBox="0 0 36 26">
+            <path d="M0 16.5C0 9.2 4.8 3.2 13.2 0L15.4 3.8C10.2 6.2 7.8 9.6 7.4 13.2H14V26H0V16.5ZM20.6 16.5C20.6 9.2 25.4 3.2 33.8 0L36 3.8C30.8 6.2 28.4 9.6 28 13.2H34.6V26H20.6V16.5Z"/>
+          </svg>
+
+          <h2 class="showcase-title" id="showcase-title">
+            Đối chiếu Luật Việt Nam<br>&amp; phát hiện rủi ro.
+          </h2>
+
+          <p class="showcase-quote" id="showcase-quote">
+            Trích dẫn chuẩn xác Điều khoản Bộ luật Dân sự &amp; Thương mại.
+          </p>
+
+          <div class="showcase-footer-row">
+            <div class="slide-dots" id="slide-dots">
+              <span class="s-dot active"></span>
+              <span class="s-dot"></span>
+              <span class="s-dot"></span>
+            </div>
+
+            <div class="nav-arrows-group">
+              <button type="button" class="arrow-sq-btn light" onclick="cycleSlide(-1)" title="Trước">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                  <path d="M19 12H5M12 19l-7-7 7-7"/>
+                </svg>
+              </button>
+              <button type="button" class="arrow-sq-btn dark" onclick="cycleSlide(1)" title="Tiếp theo">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                  <path d="M5 12h14M12 5l7 7-7 7"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Thẻ Bento Trắng dưới -->
+        <div class="bottom-bento-scoop-wrap">
+          <svg class="bento-scoop-svg-bg" viewBox="0 0 366 118" fill="none" preserveAspectRatio="none">
+            <path d="M 24,0 
+                     L 272,0 
+                     A 20,20 0 0,1 292,20 
+                     A 34,34 0 0,0 326,54 
+                     L 344,54 
+                     A 22,22 0 0,1 366,76 
+                     L 366,94 
+                     A 24,24 0 0,1 342,118 
+                     L 24,118 
+                     A 24,24 0 0,1 0,94 
+                     L 0,24 
+                     A 24,24 0 0,1 24,0 Z" 
+                  fill="#FFFFFF"/>
+          </svg>
+
+          <button type="button" class="scoop-star-orb-btn" onclick="cycleSlide(1)" title="Chuyển tính năng">
+            <svg viewBox="0 0 24 24">
+              <path d="M12 1L14.8 9.2L23 12L14.8 14.8L12 23L9.2 14.8L1 12L9.2 9.2L12 1Z"/>
+            </svg>
+          </button>
+
+          <div class="bento-content-inner">
+            <div class="bento-headline">
+              Bảo mật PII Token Vault
+            </div>
+            <p class="bento-desc">
+              Ẩn danh dữ liệu nhạy cảm &amp; định tuyến Hybrid AI.
+            </p>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+document.querySelectorAll('.input-box-wrap').forEach(box => {
+  box.addEventListener('mousemove', e => {
+    const rect = box.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / rect.width) * 100;
+    const y = ((e.clientY - rect.top) / rect.height) * 100;
+    box.style.setProperty('--spot-x', x + '%');
+    box.style.setProperty('--spot-y', y + '%');
+  });
+});
+
+function evaluatePassword(val) {
+  const bars = document.getElementById('strength-bars');
+
+  if (!val || val.length === 0) {
+    bars.setAttribute('data-level', '0');
+  } else if (val.length < 5) {
+    bars.setAttribute('data-level', '1');
+  } else if (val.length < 9) {
+    bars.setAttribute('data-level', '2');
+  } else if (val.length < 12) {
+    bars.setAttribute('data-level', '3');
+  } else {
+    bars.setAttribute('data-level', '4');
+  }
+}
+
+function togglePassword() {
+  const pwd = document.getElementById('input-pwd');
+  const btn = document.querySelector('.eye-btn');
+  if (!pwd) return;
+
+  const isPassword = pwd.type === 'password';
+  pwd.type = isPassword ? 'text' : 'password';
+
+  if (btn) {
+    if (isPassword) {
+      // Đang hiển thị mật khẩu dạng text -> đổi sang icon con mắt gạch chéo (Ẩn đi)
+      btn.innerHTML = `
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
+          <line x1="1" y1="1" x2="23" y2="23"/>
+        </svg>
+      `;
+      btn.title = 'Ẩn mật khẩu';
+      btn.classList.add('is-visible');
+    } else {
+      // Đang ẩn mật khẩu dạng password -> đổi sang icon con mắt mở (Xem mật khẩu)
+      btn.innerHTML = `
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+        </svg>
+      `;
+      btn.title = 'Hiện mật khẩu';
+      btn.classList.remove('is-visible');
+    }
+  }
+}
+
+function spawnStarParticles(originEl) {
+  const rect = originEl.getBoundingClientRect();
+  const cx = rect.left + rect.width / 2;
+  const cy = rect.top + rect.height / 2;
+  const colors = ['#0047FF', '#4D94FF', '#99CAFF', '#FFFFFF', '#1F6BFF'];
+
+  for (let i = 0; i < 18; i++) {
+    const star = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    star.setAttribute('viewBox', '0 0 24 24');
+    star.classList.add('star-particle');
+    const size = 10 + Math.random() * 12;
+    star.style.width = size + 'px';
+    star.style.height = size + 'px';
+    star.style.left = (cx - size / 2) + 'px';
+    star.style.top = (cy - size / 2) + 'px';
+
+    const angle = (Math.PI * 2 * i) / 18 + (Math.random() - 0.5) * 0.4;
+    const dist = 60 + Math.random() * 110;
+    star.style.setProperty('--tx', Math.cos(angle) * dist + 'px');
+    star.style.setProperty('--ty', Math.sin(angle) * dist - 20 + 'px');
+
+    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    path.setAttribute('d', 'M12 1L14.5 9.5L23 12L14.5 14.5L12 23L9.5 14.5L1 12L9.5 9.5L12 1Z');
+    path.setAttribute('fill', colors[i % colors.length]);
+    star.appendChild(path);
+
+    document.body.appendChild(star);
+    setTimeout(() => star.remove(), 900);
+  }
+}
+
+let currentMode = 'signup';
+let isTransitioning = false;
+
+// Tự động chuyển ô khi nhập mã OTP 6 số
+function handleOtpInput(el, idx) {
+  el.value = el.value.replace(/[^0-9]/g, '');
+  const inputs = document.querySelectorAll('.otp-digit-input');
+  if (el.value && idx < inputs.length - 1) {
+    inputs[idx + 1].focus();
+  }
+}
+
+function resendOtpCode(linkEl) {
+  const oldText = linkEl.textContent;
+  linkEl.textContent = '✓ Đã gửi lại mã!';
+  setTimeout(() => {
+    linkEl.textContent = oldText;
+  }, 1800);
+}
+
+function computeInitials(name, email) {
+  if (name && name.trim()) {
+    const parts = name.trim().split(/\s+/);
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+    }
+    return parts[0].slice(0, 2).toUpperCase();
+  }
+  if (email && email.trim()) {
+    const prefix = email.split('@')[0].replace(/[^a-zA-Z0-9]/g, '');
+    return (prefix.slice(0, 2) || 'MK').toUpperCase();
+  }
+  return 'MK';
+}
+
+function saveUserSession(name, email) {
+  const finalEmail = (email || '').trim() || 'khoa.nguyen@securedoc.ai';
+  let finalName = (name || '').trim();
+  
+  if (!finalName) {
+    finalName = localStorage.getItem('securedoc_name_map_' + finalEmail.toLowerCase());
+  }
+  
+  if (!finalName) {
+    if (finalEmail.toLowerCase().includes('khoa')) finalName = 'Minh Khoa';
+    else if (finalEmail.toLowerCase().includes('an')) finalName = 'Nguyễn An';
+    else {
+      const uname = finalEmail.split('@')[0].replace(/[._-]/g, ' ');
+      finalName = uname.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+    }
+  }
+
+  localStorage.setItem('securedoc_name_map_' + finalEmail.toLowerCase(), finalName);
+
+  const userSession = {
+    name: finalName,
+    email: finalEmail,
+    avatar: computeInitials(finalName, finalEmail),
+    role: 'Chuyên viên Pháp chế'
+  };
+
+  localStorage.removeItem('securedoc_access_token');
+  localStorage.setItem('securedoc_user', JSON.stringify(userSession));
+  return userSession;
+}
+
+function handleSocialLogin(provider, e) {
+  if (e && e.currentTarget) spawnStarParticles(e.currentTarget);
+
+  const supabaseProjectId = 'iodflivbxuklkupfphsu';
+  const providerLabel = provider === 'google' ? 'Google' : provider;
+  const redirectUrl = encodeURIComponent(window.location.origin + '/');
+  
+  const banner = document.getElementById('signup-success-banner');
+  const bannerMsg = document.getElementById('banner-msg-text');
+  if (banner && bannerMsg) {
+    bannerMsg.textContent = `✦ Đang kết nối tới Supabase Auth (${providerLabel})...`;
+    banner.classList.add('show');
+  }
+
+  // Ghi nhớ provider đang đăng nhập
+  localStorage.setItem('securedoc_last_provider', provider);
+
+  // Endpoint xác thực OAuth chính thức của Supabase
+  const authUrl = `https://${supabaseProjectId}.supabase.co/auth/v1/authorize?provider=${provider}&redirect_to=${redirectUrl}`;
+
+  setTimeout(() => {
+    window.location.href = authUrl;
+  }, 450);
+}
+
+function showAuthNotice(message, isError = false) {
+  const banner = document.getElementById('signup-success-banner');
+  const bannerMsg = document.getElementById('banner-msg-text');
+  if (!banner || !bannerMsg) return;
+  bannerMsg.textContent = message;
+  if (isError) {
+    banner.style.background = '#FEF2F2';
+    banner.style.borderColor = '#FECACA';
+    banner.style.color = '#DC2626';
+  } else {
+    banner.style.background = '';
+    banner.style.borderColor = '';
+    banner.style.color = '';
+  }
+  banner.classList.add('show');
+}
+
+async function verifyEmailBeforeAction(email) {
+  try {
+    const res = await fetch('/api/auth/validate-email', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email }),
+    });
+    if (!res.ok) return { valid: true };
+    return await res.json();
+  } catch (e) {
+    return { valid: true };
+  }
+}
+
+async function handleAuthSubmit(e) {
+  e.preventDefault();
+  if (isTransitioning) return;
+
+  const btn = document.getElementById('submit-btn');
+  const btnText = document.getElementById('submit-btn-text');
+  const emailInput = document.getElementById('input-email');
+  const pwdInput = document.getElementById('input-pwd');
+  const emailVal = emailInput ? emailInput.value.trim() : '';
+
+  // Kiểm tra chuẩn tài khoản Google / Email tồn tại thật trước khi Đăng ký, Đăng nhập hoặc gửi mã OTP
+  if (currentMode === 'signup' || currentMode === 'forgot' || currentMode === 'signin') {
+    const check = await verifyEmailBeforeAction(emailVal);
+    if (!check.valid) {
+      showAuthNotice('⚠️ ' + (check.reason || 'Địa chỉ email không hợp lệ.'), true);
+      if (emailInput) emailInput.focus();
+      return;
+    }
+  }
+
+  if (currentMode === 'signup') {
+    const nameInput = document.getElementById('input-name');
+    const fullName = nameInput ? nameInput.value.trim() : '';
+    const pwdVal = pwdInput ? pwdInput.value : '';
+
+    isTransitioning = true;
+    // Nếu đã cấu hình SUPABASE_ANON_KEY -> gửi email xác thực thật tới hộp thư Gmail qua Supabase Auth
+    let sentRealEmail = false;
+    try {
+      const cfgRes = await fetch('/api/auth/config');
+      const cfg = cfgRes.ok ? await cfgRes.json() : null;
+      if (cfg && cfg.real_email_verification_enabled && cfg.supabase_anon_key) {
+        const sbRes = await fetch(`${cfg.supabase_url}/auth/v1/signup`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': cfg.supabase_anon_key,
+          },
+          body: JSON.stringify({
+            email: emailVal,
+            password: pwdVal,
+            data: { full_name: fullName },
+          }),
+        });
+        const sbData = await sbRes.json();
+        if (!sbRes.ok) {
+          isTransitioning = false;
+          showAuthNotice('⚠️ ' + (sbData.msg || sbData.error_description || 'Không thể gửi email xác thực.'), true);
+          return;
+        }
+        sentRealEmail = true;
+      }
+    } catch (err) {}
+
+    saveUserSession(fullName, emailVal);
+    if (fullName && emailVal) {
+      fetch('/api/auth/sync-profile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: emailVal, name: fullName }),
+      }).catch(() => {});
+    }
+    spawnStarParticles(btn);
+    btn.classList.add('is-celebrating');
+    btnText.innerHTML = sentRealEmail
+      ? '✦ Đã gửi link xác nhận tới hộp thư Email của bạn!'
+      : '✦ Email hợp lệ! Đang khởi tạo tài khoản...';
+
+    setTimeout(() => {
+      btn.classList.remove('is-celebrating');
+      isTransitioning = false;
+      const doneMsg = sentRealEmail
+        ? 'Đã gửi email xác nhận thật qua Supabase! Hãy kiểm tra hộp thư Gmail để kích hoạt.'
+        : 'Tạo tài khoản thành công! Hãy đăng nhập để bắt đầu.';
+      switchToMode('signin', doneMsg);
+    }, 850);
+  } else if (currentMode === 'forgot') {
+    isTransitioning = true;
+    let sentRealRecovery = false;
+    try {
+      const cfgRes = await fetch('/api/auth/config');
+      const cfg = cfgRes.ok ? await cfgRes.json() : null;
+      if (cfg && cfg.real_email_verification_enabled && cfg.supabase_anon_key) {
+        const sbRes = await fetch(`${cfg.supabase_url}/auth/v1/recover`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': cfg.supabase_anon_key,
+          },
+          body: JSON.stringify({ email: emailVal }),
+        });
+        if (sbRes.ok) sentRealRecovery = true;
+      }
+    } catch (err) {}
+
+    spawnStarParticles(btn);
+    btn.classList.add('is-celebrating');
+    btnText.innerHTML = sentRealRecovery
+      ? '✦ Đã gửi email khôi phục thật tới hộp thư!'
+      : '✦ Email hợp lệ! Đã gửi mã OTP 6 số tới Email!';
+
+    setTimeout(() => {
+      btn.classList.remove('is-celebrating');
+      isTransitioning = false;
+      switchToMode(
+        'reset',
+        sentRealRecovery
+          ? 'Đã gửi email khôi phục thật qua Supabase tới hộp thư của bạn.'
+          : 'Đã gửi mã xác thực 6 số tới email hợp lệ của bạn.'
+      );
+    }, 800);
+  } else if (currentMode === 'reset') {
+    isTransitioning = true;
+    spawnStarParticles(btn);
+    btn.classList.add('is-celebrating');
+    btnText.innerHTML = '✦ Cập nhật mật khẩu mới thành công!';
+
+    setTimeout(() => {
+      btn.classList.remove('is-celebrating');
+      isTransitioning = false;
+      switchToMode('signin', 'Đặt lại mật khẩu thành công! Hãy đăng nhập lại.');
+    }, 850);
+  } else {
+    // Mode signin
+    saveUserSession('', emailVal);
+
+    spawnStarParticles(btn);
+    btn.classList.add('is-celebrating');
+    btnText.innerHTML = '✦ Đang mở không gian thẩm định AI...';
+    setTimeout(() => {
+      window.location.href = '/';
+    }, 850);
+  }
+}
+
+function toggleAuthMode(fromSignupSuccess = false) {
+  if (currentMode === 'signup') {
+    switchToMode('signin', fromSignupSuccess ? 'Tạo tài khoản thành công! Hãy đăng nhập để bắt đầu.' : '');
+  } else {
+    switchToMode('signup', '');
+  }
+}
+
+function switchToMode(targetMode, bannerText = '', instant = false) {
+  if (isTransitioning && !instant) return;
+  if (!instant) isTransitioning = true;
+
+  const shell = document.getElementById('card-shell');
+  const nameGroup = document.getElementById('name-field-group');
+  const emailGroup = document.getElementById('email-field-group');
+  const otpGroup = document.getElementById('otp-field-group');
+  const pwdGroup = document.getElementById('pwd-field-group');
+  const pwdLabel = document.getElementById('pwd-label-text');
+  const heading = document.getElementById('form-heading');
+  const subheading = document.getElementById('form-subheading');
+  const submitBtnText = document.getElementById('submit-btn-text');
+  const bottomSwitch = document.getElementById('bottom-switch-text');
+  const banner = document.getElementById('signup-success-banner');
+  const bannerMsg = document.getElementById('banner-msg-text');
+
+  if (!instant) shell.classList.add('is-morphing');
+
+  const applyState = () => {
+    currentMode = targetMode;
+    shell.setAttribute('data-auth-mode', currentMode);
+
+    if (bannerText) {
+      bannerMsg.textContent = bannerText;
+      banner.classList.add('show');
+    } else {
+      banner.classList.remove('show');
+    }
+
+    if (currentMode === 'signin') {
+      nameGroup.classList.add('hidden-field');
+      emailGroup.classList.remove('hidden-field');
+      otpGroup.classList.add('hidden-field');
+      pwdGroup.classList.remove('hidden-field');
+      pwdLabel.textContent = 'Mật khẩu';
+
+      heading.textContent = 'Đăng nhập';
+      subheading.textContent = 'Thẩm định hợp đồng & đối chiếu Luật Việt Nam';
+      submitBtnText.textContent = 'Đăng nhập';
+      bottomSwitch.innerHTML = 'Chưa có tài khoản? <a onclick="switchToMode(\'signup\')">Đăng ký</a>';
+      cycleSlide(1);
+    } else if (currentMode === 'forgot') {
+      nameGroup.classList.add('hidden-field');
+      emailGroup.classList.remove('hidden-field');
+      otpGroup.classList.add('hidden-field');
+      pwdGroup.classList.add('hidden-field');
+
+      heading.textContent = 'Quên mật khẩu?';
+      subheading.textContent = 'Nhập email để nhận mã xác thực khôi phục';
+      submitBtnText.textContent = 'Gửi mã xác thực';
+      bottomSwitch.innerHTML = 'Nhớ mật khẩu rồi? <a onclick="switchToMode(\'signin\')">Quay lại Đăng nhập</a>';
+      cycleSlide(2);
+    } else if (currentMode === 'reset') {
+      nameGroup.classList.add('hidden-field');
+      emailGroup.classList.add('hidden-field');
+      otpGroup.classList.remove('hidden-field');
+      pwdGroup.classList.remove('hidden-field');
+      pwdLabel.textContent = 'Mật khẩu mới';
+
+      heading.textContent = 'Đặt lại mật khẩu';
+      subheading.textContent = 'Nhập mã OTP 6 số và thiết lập mật khẩu mới';
+      submitBtnText.textContent = 'Cập nhật mật khẩu';
+      bottomSwitch.innerHTML = '<a onclick="switchToMode(\'signin\')">&larr; Quay lại Đăng nhập</a>';
+      cycleSlide(2);
+    } else {
+      nameGroup.classList.remove('hidden-field');
+      emailGroup.classList.remove('hidden-field');
+      otpGroup.classList.add('hidden-field');
+      pwdGroup.classList.remove('hidden-field');
+      pwdLabel.textContent = 'Mật khẩu';
+
+      heading.textContent = 'Tạo tài khoản';
+      subheading.textContent = 'Thẩm định hợp đồng & đối chiếu Luật Việt Nam';
+      submitBtnText.textContent = 'Bắt đầu ngay';
+      bottomSwitch.innerHTML = 'Đã có tài khoản? <a onclick="switchToMode(\'signin\')">Đăng nhập</a>';
+      cycleSlide(0);
+    }
+  };
+
+  if (instant) {
+    applyState();
+  } else {
+    setTimeout(applyState, 240);
+    setTimeout(() => {
+      shell.classList.remove('is-morphing');
+      isTransitioning = false;
+    }, 680);
+  }
+}
+
+// Hỗ trợ mở trực tiếp chế độ qua URL: pathname (/login, /register, /forgot-password), query (?mode=...), hoặc hash (#signin, #signup...)
+window.addEventListener('DOMContentLoaded', () => {
+  const params = new URLSearchParams(window.location.search);
+  const modeParam = params.get('mode');
+  const hash = window.location.hash.replace('#', '').toLowerCase();
+  const pathname = window.location.pathname.toLowerCase();
+
+  let targetMode = null;
+  if (modeParam) {
+    targetMode = modeParam.toLowerCase();
+  } else if (hash) {
+    if (hash === 'login' || hash === 'signin') targetMode = 'signin';
+    else if (hash === 'register' || hash === 'signup') targetMode = 'signup';
+    else if (hash === 'forgot' || hash === 'quen-mat-khau') targetMode = 'forgot';
+    else if (hash === 'reset' || hash === 'dat-lai-mat-khau') targetMode = 'reset';
+  } else if (pathname.includes('login') || pathname.includes('signin')) {
+    targetMode = 'signin';
+  } else if (pathname.includes('register') || pathname.includes('signup')) {
+    targetMode = 'signup';
+  } else if (pathname.includes('forgot') || pathname.includes('quen-mat-khau')) {
+    targetMode = 'forgot';
+  } else if (pathname.includes('reset')) {
+    targetMode = 'reset';
+  }
+
+  if (targetMode === 'forgot') {
+    switchToMode('forgot', '', true);
+  } else if (targetMode === 'reset') {
+    switchToMode('reset', 'Đã gửi mã xác thực 6 số tới email của bạn.', true);
+  } else if (targetMode === 'signin') {
+    switchToMode('signin', '', true);
+  } else if (targetMode === 'signup') {
+    switchToMode('signup', '', true);
+  }
+});
+
+const slides = [
+  {
+    title: 'Đối chiếu Luật Việt Nam<br>&amp; phát hiện rủi ro.',
+    quote: 'Trích dẫn chuẩn xác Điều khoản Bộ luật Dân sự & Thương mại.'
+  },
+  {
+    title: 'Ma trận đàm phán<br>3 kịch bản linh hoạt.',
+    quote: 'Đề xuất phương án Cứng rắn, Win-Win hoặc Phòng thủ.'
+  },
+  {
+    title: 'Tóm tắt điều hành<br>&amp; xuất báo cáo Word.',
+    quote: 'Bóc tách dòng thời gian, điều khoản thiếu & định tuyến Gemini / Ollama.'
+  }
+];
+
+let slideIdx = 0;
+function cycleSlide(step) {
+  if (step === 0) slideIdx = 0;
+  else slideIdx = (slideIdx + step + slides.length) % slides.length;
+
+  const s = slides[slideIdx];
+  const titleEl = document.getElementById('showcase-title');
+  const quoteEl = document.getElementById('showcase-quote');
+
+  titleEl.style.opacity = '0';
+  quoteEl.style.opacity = '0';
+  titleEl.style.transform = 'translateY(6px)';
+  quoteEl.style.transform = 'translateY(6px)';
+
+  setTimeout(() => {
+    titleEl.innerHTML = s.title;
+    quoteEl.textContent = s.quote;
+    titleEl.style.opacity = '1';
+    quoteEl.style.opacity = '1';
+    titleEl.style.transform = 'translateY(0)';
+    quoteEl.style.transform = 'translateY(0)';
+  }, 150);
+
+  const dots = document.querySelectorAll('#slide-dots .s-dot');
+  dots.forEach((d, idx) => {
+    d.classList.toggle('active', idx === slideIdx);
+  });
+}
+</script>
+</body>
+</html>

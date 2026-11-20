@@ -1,51 +1,11 @@
 [
   {
-    "law_id": "LTM_2005",
-    "law_name": "Luật Thương mại 2005",
-    "article": "Điều 301",
-    "title": "Mức phạt vi phạm nghĩa vụ hợp đồng",
-    "content": "Mức phạt đối với vi phạm nghĩa vụ hợp đồng hoặc tổng mức phạt đối với nhiều vi phạm do các bên thoả thuận trong hợp đồng, nhưng không quá 8% giá trị phần nghĩa vụ hợp đồng bị vi phạm, trừ trường hợp quy định tại Điều 266 của Luật này.",
-    "category": "commercial"
-  },
-  {
-    "law_id": "BLDS_2015",
-    "law_name": "Bộ luật Dân sự 2015",
-    "article": "Điều 418",
-    "title": "Thỏa thuận phạt vi phạm và bồi thường thiệt hại",
-    "content": "Phạt vi phạm là sự thỏa thuận giữa các bên trong hợp đồng, theo đó bên vi phạm nghĩa vụ phải nộp một khoản tiền cho bên bị vi phạm. Các bên có thể thoả thuận về việc bên vi phạm nghĩa vụ chỉ phải chịu phạt vi phạm mà không phải bồi thường thiệt hại hoặc vừa phải chịu phạt vi phạm và vừa phải bồi thường thiệt hại.",
-    "category": "civil"
-  },
-  {
-    "law_id": "BLDS_2015",
-    "law_name": "Bộ luật Dân sự 2015",
-    "article": "Điều 428",
-    "title": "Đơn phương chấm dứt thực hiện hợp đồng",
-    "content": "Một bên có quyền đơn phương chấm dứt thực hiện hợp đồng và không phải bồi thường thiệt hại khi bên kia vi phạm nghiêm trọng nghĩa vụ trong hợp đồng. Bên đơn phương chấm dứt thực hiện hợp đồng phải thông báo ngay cho bên kia biết về việc chấm dứt; nếu không thông báo mà gây thiệt hại thì phải bồi thường.",
-    "category": "civil"
-  },
-  {
     "law_id": "ND_13_2023",
     "law_name": "Nghị định 13/2023/NĐ-CP",
     "article": "Điều 9 & 17",
     "title": "Quyền và nghĩa vụ bảo vệ dữ liệu cá nhân",
     "content": "Bên kiểm soát và bên xử lý dữ liệu cá nhân phải áp dụng các biện pháp bảo mật kỹ thuật và tổ chức để bảo vệ dữ liệu cá nhân. Mọi hành vi chia sẻ, xử lý dữ liệu cá nhân bắt buộc phải có sự đồng ý rõ ràng của chủ thể dữ liệu, trừ trường hợp khẩn cấp theo luật định.",
     "category": "privacy"
-  },
-  {
-    "law_id": "BLDS_2015",
-    "law_name": "Bộ luật Dân sự 2015",
-    "article": "Điều 156",
-    "title": "Sự kiện bất khả kháng và trở ngại khách quan",
-    "content": "Sự kiện bất khả kháng là sự kiện xảy ra một cách khách quan không thể lường trước được và không thể khắc phục được mặc dù đã áp dụng mọi biện pháp cần thiết và khả năng cho phép. Bên có nghĩa vụ không phải chịu trách nhiệm dân sự nếu nghĩa vụ không thực hiện được do sự kiện bất khả kháng.",
-    "category": "civil"
-  },
-  {
-    "law_id": "BLDS_2015",
-    "law_name": "Bộ luật Dân sự 2015",
-    "article": "Điều 328",
-    "title": "Đặt cọc và xử lý tiền đặt cọc",
-    "content": "Đặt cọc là việc một bên giao cho bên kia một khoản tiền hoặc kim khí quý, đá quý hoặc vật có giá trị khác trong một thời hạn để bảo đảm giao kết hoặc thực hiện hợp đồng. Trường hợp hợp đồng được giao kết, thực hiện thì tài sản đặt cọc được trả lại cho bên đặt cọc hoặc được trừ để thực hiện nghĩa vụ trả tiền; nếu bên đặt cọc từ chối thì tài sản đặt cọc thuộc về bên nhận đặt cọc; nếu bên nhận đặt cọc từ chối thì phải trả lại tài sản đặt cọc và một khoản tiền tương đương giá trị tài sản đặt cọc.",
-    "category": "civil"
   },
   {
     "law_id": "LSHTT_2005",

@@ -2180,3 +2180,8 @@ body.resizing-col * {
 }
 
 
+
+/* RBAC: Ẩn tuyệt đối nút AI System & RAG với người dùng thường, chỉ hiện khi Admin được xác thực */
+.btn-open-inspector:not(.is-admin-visible) {
+  display: none !important;
+}
