@@ -1,16 +1,19 @@
 # Core Framework & APIs
 fastapi>=0.110.0
 uvicorn[standard]>=0.28.0
+python-multipart>=0.0.9
 pydantic>=2.6.0
 python-dotenv>=1.0.0
 httpx>=0.27.0
 
-# LLM & AI Providers
+# LLM, Vector RAG & AI Providers
 google-genai>=1.0.0
+numpy>=1.26.0
 
-# Document Ingestion & Export
+# Document Ingestion, Web Scraping & Export
 pypdf>=5.0.0
 python-docx>=1.1.0
+beautifulsoup4>=4.12.0
 
 # Enterprise Persistence & Database
 sqlalchemy>=2.0.0
