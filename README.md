@@ -27,19 +27,14 @@
 ## 🏗️ Kiến Trúc Hệ Thống
 
 ```mermaid
-flowchart TD
-    U["User (Web SPA + Google OAuth)"] -->|"Bearer JWT + File/Query"| GW["FastAPI Gateway & Rate Limiter"]
-    GW --> AUTH["JWT Auth & RBAC (src/auth.py)"]
-    AUTH --> ETL["ETL & Gemini Vision OCR"]
-    ETL --> SEC["PII Token Vault & Input Guardrails"]
-    SEC --> CACHE{"N-gram Semantic Cache (SHA-256)"}
-    CACHE -->|"Hit (<50ms)"| SSE["SSE Streaming & Live Audit Canvas"]
-    CACHE -->|"Miss"| RAG["Vietnamese Legal Vector RAG"]
-    RAG --> ROUTER["Hybrid LLM Router (Gemini <-> Ollama)"]
-    ROUTER --> JSON["Safe JSON Parser & 3-Scenario Matrix"]
-    JSON --> SSE
-    JSON --> DB["Async PostgreSQL (Supabase) + SQLite Failover"]
-    SSE --> EXP["Word (.docx) Export (Optional PII Restore)"]
+flowchart LR
+    U["User SPA (Google OAuth)"] --> GW["FastAPI Gateway (JWT & RBAC)"]
+    GW --> ETL["ETL & OCR + PII Vault / Guardrails"]
+    ETL --> CACHE{"N-gram Cache (SHA-256)"}
+    CACHE -->|"Hit (<50ms)"| OUT["SSE Stream & Audit Canvas (.docx)"]
+    CACHE -->|"Miss"| RAG["Legal Vector RAG + Hybrid LLM Router"]
+    RAG --> OUT
+    RAG --> DB["PostgreSQL (Supabase) + SQLite Failover"]
 ```
 
 ---

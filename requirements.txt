@@ -16,7 +16,8 @@ python-docx>=1.1.0
 beautifulsoup4>=4.12.0
 
 # Enterprise Persistence & Database
-sqlalchemy>=2.0.0
+sqlalchemy[asyncio]>=2.0.0
+greenlet>=3.0.0
 aiosqlite>=0.20.0
 asyncpg>=0.29.0
 
