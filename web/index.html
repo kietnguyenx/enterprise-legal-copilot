@@ -7,8 +7,8 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <title>SecureDoc AI</title>
-<link rel="icon" type="image/x-icon" href="/favicon.ico">
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><path d='M28 10Q30 34 54 36Q30 38 28 62Q26 38 2 36Q26 34 28 10Z' fill='%230047FF'/><path d='M50 5Q51.3 12.7 59 14Q51.3 15.3 50 23Q48.7 15.3 41 14Q48.7 12.7 50 5Z' fill='%230047FF'/></svg>">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><path d='M28 10Q30 34 54 36Q30 38 28 62Q26 38 2 36Q26 34 28 10Z' fill='%232573FF'/><path d='M28 24Q29 35 40 36Q29 37 28 48Q27 37 16 36Q27 35 28 24Z' fill='%23FFFFFF'/><path d='M50 5Q51.3 12.7 59 14Q51.3 15.3 50 23Q48.7 15.3 41 14Q48.7 12.7 50 5Z' fill='%2366A8FF'/></svg>">
+<link rel="alternate icon" type="image/x-icon" href="/favicon.ico?v=2">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -592,19 +592,53 @@ function updateDynamicGreeting(fullName, sessionCount) {
     ? sessionCount
     : (typeof window.__securedocSessionCount === 'number' ? window.__securedocSessionCount : 0);
 
+  // Hàm chọn câu ngẫu nhiên nhưng KHÔNG bao giờ trùng câu vừa hiện ở lần F5 trước
+  const pickNextPhrase = (key, list) => {
+    let lastIdx = -1;
+    try { lastIdx = parseInt(sessionStorage.getItem(key) || '-1', 10); } catch (e) {}
+    let nextIdx = Math.floor(Math.random() * list.length);
+    if (list.length > 1 && nextIdx === lastIdx) {
+      nextIdx = (lastIdx + 1) % list.length;
+    }
+    try { sessionStorage.setItem(key, String(nextIdx)); } catch (e) {}
+    return list[nextIdx];
+  };
+
   // 1. Chưa đăng nhập (Khách mới mở link giống ChatGPT)
   if (!isLoggedIn) {
     greetEl.textContent = `${timeGreeting}!`;
-    if (tagEl) tagEl.textContent = 'Bảo mật dữ liệu từ bước đầu tiên.';
+    const guestTaglines = [
+      'Bảo mật dữ liệu từ bước đầu tiên.',
+      'Thẩm định hợp đồng & đối chiếu Luật Việt Nam.',
+      'Phát hiện rủi ro pháp lý chỉ trong vài giây.',
+      'Hỏi đáp pháp lý an toàn với PII Token Vault.',
+    ];
+    if (tagEl) tagEl.textContent = pickNextPhrase('sd_guest_tag', guestTaglines);
     if (subEl) subEl.textContent = 'Dùng thử miễn phí ngay không cần đăng nhập — tải hợp đồng (.pdf, .docx, ảnh scan) hoặc hỏi AI.';
     return;
   }
 
   // 2. Đã đăng nhập nhưng chưa thẩm định lần nào (Tài khoản mới)
   if (count === 0) {
-    greetEl.textContent = `Chào mừng, ${displayName}`;
-    if (tagEl) tagEl.textContent = 'Bắt đầu thẩm định hợp đồng đầu tiên của bạn.';
-    if (subEl) subEl.textContent = 'PII Token Vault & Legal Vector RAG đã sẵn sàng — tải bản thảo hoặc ảnh chụp dấu đỏ lên ngay.';
+    const newUserGreetings = [
+      `Chào mừng, ${displayName}`,
+      `${timeGreeting}, ${displayName}`,
+    ];
+    const newUserTaglines = [
+      'Bắt đầu thẩm định hợp đồng đầu tiên của bạn.',
+      'Hôm nay ta kiểm tra điều khoản nào trước?',
+      'Sẵn sàng đối chiếu Luật Việt Nam cho bạn.',
+      'Tải bản thảo lên để phát hiện rủi ro tiềm ẩn.',
+      'Bảo mật PII tự động từ bước đầu tiên.',
+    ];
+    const newUserSubtitles = [
+      'PII Token Vault & Legal Vector RAG đã sẵn sàng — tải bản thảo hoặc ảnh chụp dấu đỏ lên ngay.',
+      'Trò chuyện tự do với AI, hoặc tải hợp đồng (.pdf, .docx, ảnh scan) để chấm điểm rủi ro pháp lý.',
+      'Nhận ngay Executive Summary, Redline Diff và Ma trận 3 kịch bản đàm phán trong vài giây.',
+    ];
+    greetEl.textContent = pickNextPhrase('sd_new_greet', newUserGreetings);
+    if (tagEl) tagEl.textContent = pickNextPhrase('sd_new_tag', newUserTaglines);
+    if (subEl) subEl.textContent = pickNextPhrase('sd_new_sub', newUserSubtitles);
     return;
   }
 
@@ -613,7 +647,7 @@ function updateDynamicGreeting(fullName, sessionCount) {
     `${timeGreeting}, ${displayName}`,
     `Rất vui gặp lại, ${displayName}`,
   ];
-  greetEl.textContent = returningGreetings[count % returningGreetings.length];
+  greetEl.textContent = pickNextPhrase('sd_ret_greet', returningGreetings);
 
   const returningTaglines = [
     'Hôm nay ta thẩm định hợp đồng nào?',
@@ -622,13 +656,13 @@ function updateDynamicGreeting(fullName, sessionCount) {
     'Cùng tìm điểm bất lợi trước khi đặt bút ký.',
   ];
   const returningSubtitles = [
-    `Bạn đang có ${count} phiên thẩm định trong lịch sử — chọn lại bên phải hoặc tải hợp đồng mới lên ngay.`,
+    `Bạn đang có ${count} phiên thẩm định trong lịch sử — chọn lại hoặc tải hợp đồng mới lên ngay.`,
     'PII Token Vault & Legal Vector RAG đang hoạt động — mọi dữ liệu nhạy cảm đều được bảo vệ.',
     'Tải lên bản thảo hợp đồng hoặc ảnh chụp dấu đỏ để nhận Ma trận 3 kịch bản đàm phán.',
   ];
 
-  if (tagEl) tagEl.textContent = returningTaglines[Math.floor(Math.random() * returningTaglines.length)];
-  if (subEl) subEl.textContent = returningSubtitles[Math.floor(Math.random() * returningSubtitles.length)];
+  if (tagEl) tagEl.textContent = pickNextPhrase('sd_ret_tag', returningTaglines);
+  if (subEl) subEl.textContent = pickNextPhrase('sd_ret_sub', returningSubtitles);
 }
 window.updateDynamicGreeting = updateDynamicGreeting;
 
