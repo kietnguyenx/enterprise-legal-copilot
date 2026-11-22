@@ -241,3 +241,89 @@ def test_validate_email_chuan_google_va_chan_email_rac():
     # Chặn email rác 10 phút
     r5 = client.post("/api/auth/validate-email", json={"email": "spammer@tempmail.com"}).json()
     assert r5["valid"] is False
+
+
+def test_export_da_dinh_dang_docx_pdf_csv_md_json():
+    """Kiểm tra xuất báo cáo 5 định dạng thực tế (.docx, .pdf A4, .csv Excel, .md, .json) + Giải mã PII gốc"""
+    from src.services.session_service import SESSIONS, _lock
+
+    sid = "test_multi_export_session"
+    sample_session = {
+        "id": sid,
+        "owner_id": "guest",
+        "file_name": "HopDong_LaoDong_Mau.pdf",
+        "pii_vault": {"[PERSON_1]": "Nguyễn Văn Minh"},
+        "audit": {
+            "risk_score": 82,
+            "risk_level": "RỦI RO CAO",
+            "executive_summary": "Hợp đồng với [PERSON_1] có điều khoản phạt vượt trần luật định.",
+            "recommendation": "Yêu cầu giảm mức phạt về tối đa 8% theo Điều 301 Luật Thương mại.",
+            "clauses": [
+                {
+                    "ref": "Điều 5.2",
+                    "topic": "Phạt vi phạm hợp đồng 25%",
+                    "status": "Rủi ro Cao",
+                    "action": "Giảm xuống 8%",
+                    "note": "Trái Điều 301 Luật Thương mại 2005",
+                }
+            ],
+            "redline_diff": {
+                "original": "Phạt vi phạm 25% tổng giá trị hợp đồng.",
+                "revised": "Phạt vi phạm tối đa 8% giá trị phần nghĩa vụ bị vi phạm.",
+            },
+            "negotiation_scenarios": {
+                "aggressive": {"strategy": "Bác bỏ hoàn toàn điều khoản phạt 25%."},
+                "balanced": {"strategy": "Chốt trần phạt 8% đúng Luật Thương mại."},
+                "conservative": {"strategy": "Đề nghị bổ sung cơ chế khắc phục 15 ngày trước khi phạt."},
+            },
+            "retrieved_laws": [
+                {"law_name": "Luật Thương mại 2005", "article": "Điều 301", "title": "Mức phạt vi phạm tối đa 8%"}
+            ],
+        },
+    }
+
+    with _lock:
+        SESSIONS[sid] = sample_session
+
+    try:
+        # 1. Word (.docx)
+        r_docx = client.get(f"/api/sessions/{sid}/export?fmt=docx")
+        assert r_docx.status_code == 200
+        assert "wordprocessingml" in r_docx.headers["content-type"]
+        assert r_docx.content[:2] == b"PK"  # ZIP/DOCX magic header
+
+        # 2. PDF A4 print-ready HTML
+        r_pdf = client.get(f"/api/sessions/{sid}/export?fmt=pdf")
+        assert r_pdf.status_code == 200
+        assert "text/html" in r_pdf.headers["content-type"]
+        assert "Điều 5.2" in r_pdf.text and "82/100" in r_pdf.text and "window.print()" in r_pdf.text
+
+        # 3. Excel (.csv UTF-8-SIG BOM)
+        r_csv = client.get(f"/api/sessions/{sid}/export?fmt=csv")
+        assert r_csv.status_code == 200
+        assert r_csv.content.startswith(b"\xef\xbb\xbf")
+        csv_text = r_csv.content.decode("utf-8-sig")
+        assert "Điều 5.2" in csv_text and "Phạt vi phạm hợp đồng 25%" in csv_text
+
+        # 4. Markdown (.md) mặc định giữ ẩn danh PII vs giải mã PII gốc
+        r_md_masked = client.get(f"/api/sessions/{sid}/export?fmt=md")
+        assert r_md_masked.status_code == 200
+        assert "[PERSON_1]" in r_md_masked.text and "Nguyễn Văn Minh" not in r_md_masked.text
+
+        r_md_restored = client.get(f"/api/sessions/{sid}/export?fmt=md&restore_original_pii=true")
+        assert r_md_restored.status_code == 200
+        assert "Nguyễn Văn Minh" in r_md_restored.text and "Điều 301" in r_md_restored.text
+
+        # 5. Structured JSON (.json)
+        r_json = client.get(f"/api/sessions/{sid}/export?fmt=json&restore_original_pii=true")
+        assert r_json.status_code == 200
+        data = r_json.json()
+        assert data["audit"]["risk_score"] == 82
+        assert "Nguyễn Văn Minh" in data["audit"]["executive_summary"]
+
+        # 6. Định dạng không hợp lệ -> 400
+        r_bad = client.get(f"/api/sessions/{sid}/export?fmt=exe")
+        assert r_bad.status_code == 400
+    finally:
+        with _lock:
+            SESSIONS.pop(sid, None)

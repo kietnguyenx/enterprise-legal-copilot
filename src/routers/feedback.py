@@ -9,7 +9,13 @@ from pydantic import BaseModel
 
 from src.auth import AuthUser, get_current_user, can_access_session
 from src.database import db_save_feedback
-from src.exporter import generate_audit_docx
+from src.exporter import (
+    generate_audit_docx,
+    generate_audit_csv,
+    generate_audit_markdown,
+    generate_audit_json,
+    generate_audit_print_html,
+)
 from src.privacy import restore_pii
 from src.services.session_service import SESSIONS, _lock, save_store, get_session_by_id
 
@@ -70,8 +76,17 @@ async def api_submit_feedback(req: FeedbackRequest):
 
 
 @router.get("/api/sessions/{sid}/export")
-def export_docx(sid: str, restore_original_pii: bool = False, user: AuthUser = Depends(get_current_user)):
-    """Xuất báo cáo thẩm định hợp đồng ra tệp Microsoft Word (.docx), hỗ trợ giải mã PII gốc có kiểm soát"""
+def export_report(
+    sid: str,
+    fmt: str = "docx",
+    restore_original_pii: bool = False,
+    user: AuthUser = Depends(get_current_user),
+):
+    """Xuất báo cáo thẩm định hợp đồng đa định dạng (docx, pdf, csv, md, json), hỗ trợ giải mã PII gốc"""
+    fmt_clean = (fmt or "docx").strip().lower()
+    if fmt_clean not in ("docx", "pdf", "csv", "md", "json"):
+        raise HTTPException(400, "Định dạng xuất không hỗ trợ. Chọn: docx, pdf, csv, md, json")
+
     with _lock:
         s = get_session_by_id(sid)
         if not can_access_session(s, user):
@@ -81,10 +96,37 @@ def export_docx(sid: str, restore_original_pii: bool = False, user: AuthUser = D
         audit_payload = s["audit"]
         if restore_original_pii and s.get("pii_vault"):
             audit_payload = _restore_pii_recursive(audit_payload, s["pii_vault"])
-        content = generate_audit_docx(s.get("file_name") or "Tai_lieu", audit_payload)
-        stem = (s.get("file_name") or "Tai_lieu").rsplit(".", 1)[0]
+        file_name = s.get("file_name") or "Tai_lieu"
+        stem = file_name.rsplit(".", 1)[0]
 
     suffix = "_GiaiMa_PII" if restore_original_pii else ""
+
+    if fmt_clean == "pdf":
+        content = generate_audit_print_html(file_name, audit_payload)
+        return Response(content, media_type="text/html; charset=utf-8")
+    if fmt_clean == "csv":
+        content = generate_audit_csv(file_name, audit_payload)
+        return Response(
+            content,
+            media_type="text/csv; charset=utf-8",
+            headers={"Content-Disposition": f"attachment; filename*=UTF-8''Bao_Cao_Tham_Dinh_{quote(stem)}{suffix}.csv"},
+        )
+    if fmt_clean == "md":
+        content = generate_audit_markdown(file_name, audit_payload)
+        return Response(
+            content,
+            media_type="text/markdown; charset=utf-8",
+            headers={"Content-Disposition": f"attachment; filename*=UTF-8''Bao_Cao_Tham_Dinh_{quote(stem)}{suffix}.md"},
+        )
+    if fmt_clean == "json":
+        content = generate_audit_json(file_name, audit_payload)
+        return Response(
+            content,
+            media_type="application/json; charset=utf-8",
+            headers={"Content-Disposition": f"attachment; filename*=UTF-8''Bao_Cao_Tham_Dinh_{quote(stem)}{suffix}.json"},
+        )
+
+    content = generate_audit_docx(file_name, audit_payload)
     return Response(
         content,
         media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",

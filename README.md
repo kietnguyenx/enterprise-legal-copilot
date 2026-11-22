@@ -7,7 +7,7 @@
 [![Google Gemini](https://img.shields.io/badge/Google%20Gemini-Multimodal%20%26%20Vision%20OCR-4285F4?style=flat&logo=google&logoColor=white)](https://ai.google.dev/)
 [![Ollama](https://img.shields.io/badge/Ollama-Qwen%202.5%20Local-black?style=flat&logo=ollama&logoColor=white)](https://ollama.com/)
 [![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?style=flat&logo=docker&logoColor=white)](https://www.docker.com/)
-[![Tests](https://img.shields.io/badge/Pytest-36%2F36%20Passed-brightgreen?style=flat&logo=pytest&logoColor=white)](tests/)
+[![Tests](https://img.shields.io/badge/Pytest-37%2F37%20Passed-brightgreen?style=flat&logo=pytest&logoColor=white)](tests/)
 
 🌐 **Live Demo:** https://securedocai.onrender.com
 
@@ -17,7 +17,7 @@
 
 **SecureDoc AI** tự động hóa quy trình rà soát hợp đồng cho doanh nghiệp và phòng pháp chế:
 * **Đa định dạng & OCR:** Đọc trực tiếp PDF, Word (`.docx`), TXT, CSV, MD, **PDF scan** và **ảnh chụp hợp đồng (`.png`, `.jpg`, `.webp`)** qua Gemini Multimodal Vision OCR.
-* **Smart PII Token Vault (2 chiều):** Tự động ẩn danh SĐT, CCCD, Email, STK trước khi gửi lên Cloud LLM (không che nhầm giá trị tiền hợp đồng như `1000000000 VND`) và hỗ trợ giải mã PII gốc có kiểm soát khi xuất file `.docx`.
+* **Smart PII Token Vault (2 chiều):** Tự động ẩn danh SĐT, CCCD, Email, STK trước khi gửi lên Cloud LLM (không che nhầm giá trị tiền hợp đồng như `1000000000 VND`) và hỗ trợ giải mã PII gốc có kiểm soát khi xuất báo cáo đa định dạng (**`.docx`**, **`.pdf` A4**, **`.csv` Excel**, **`.md`**, **`.json`**).
 * **Vietnamese Legal Vector RAG:** Đối chiếu điều khoản với kho luật Việt Nam (*Bộ luật Dân sự 2015, Luật Thương mại 2005, Bộ luật Lao động 2019, Nghị định 13/2023/NĐ-CP, Luật SHTT*) và đề xuất **Ma trận 3 kịch bản đàm phán** (*Cứng rắn / Cân bằng Win-Win / Phòng thủ*).
 * **Hybrid LLM Router & Semantic Cache:** Kết hợp Gemini Cloud và Ollama Local (Qwen 2.5) cho dữ liệu nội bộ; bộ đệm N-gram Semantic Cache (SHA-256 toàn văn bản) giảm độ trễ câu hỏi lặp xuống `<50ms`.
 * **Xác thực, Phân quyền & Bảo mật:** Supabase Google OAuth JWT, cô lập dữ liệu theo user (`User Isolation`), phân quyền **Admin RBAC** cho bảng **AI System & RAG Inspector**, kiểm duyệt chuẩn Gmail/DNS, cùng lớp phòng thủ chống *Path Traversal, SSRF, Prompt Injection Bypass* và *Cache Poisoning*.
@@ -76,7 +76,7 @@ SecureDoc-AI/
 │   ├── cache.py              # Thread-safe N-gram Semantic Cache (Atomic Write)
 │   ├── database.py           # Async SQLAlchemy 2.0 + Auto SQLite Failover
 │   ├── email_validator.py    # Kiểm duyệt chuẩn Gmail, chặn email rác & DNS check
-│   ├── exporter.py           # Xuất báo cáo Word (.docx)
+│   ├── exporter.py           # Xuất báo cáo đa định dạng (.docx, .pdf A4, .csv, .md, .json)
 │   ├── guardrails.py         # Chống Prompt Injection & Bypass (\u200B, \n)
 │   ├── ingestion.py          # Multi-format ETL & Gemini Vision OCR
 │   ├── legal_kb.py           # Vector RAG Engine (Cosine Similarity)
@@ -86,7 +86,7 @@ SecureDoc-AI/
 │   └── telemetry.py          # Đo Token, Cost ($) & Latency p95
 ├── tests/
 │   ├── test_core.py          # 16 Unit & Integration Tests cốt lõi
-│   └── test_qa_bootcamp.py   # 20 Security, Edge-Case, RBAC & Email Tests
+│   └── test_qa_bootcamp.py   # 21 Security, Edge-Case, RBAC, Email & Multi-Export Tests
 ├── web/                      # index.html, auth.html, app.js, style.css
 ├── docker-compose.yml
 ├── Dockerfile
@@ -138,7 +138,7 @@ docker compose up --build -d
 ## 🧪 Kiểm Thử & Đánh Giá
 
 ```bash
-# Chạy toàn bộ 36 bài kiểm thử tự động (Core + Security/QA + RBAC)
+# Chạy toàn bộ 37 bài kiểm thử tự động (Core + Security/QA + RBAC + Export)
 pytest
 
 # Chạy benchmark đánh giá RAG Recall@3, PII Vault & Guardrails
@@ -147,7 +147,7 @@ python scripts/eval_rag.py
 
 | Hạng Mục | Kết Quả |
 | :--- | :---: |
-| **Pytest Suite (Core + Security/QA + RBAC)** | **36 / 36 Passed (100%)** |
+| **Pytest Suite (Core + Security/QA + RBAC + Export)** | **37 / 37 Passed (100%)** |
 | **Legal Vector RAG (`Recall@3`)** | **10 / 10 (100.0%)** |
 | **Smart PII Token Vault Accuracy** | **7 / 7 (100.0%)** |
 | **Input Guardrails Block Rate** | **5 / 5 (100.0%)** |
@@ -164,7 +164,7 @@ python scripts/eval_rag.py
 | `POST` | `/api/upload` | Tải lên & thẩm định hợp đồng (PDF, DOCX, TXT, CSV, MD, ảnh OCR) |
 | `POST` | `/api/chat` | Chat pháp lý SSE Streaming (Guardrails + Semantic Cache) |
 | `GET` | `/api/sessions` | Quản lý lịch sử phiên thẩm định cô lập theo user |
-| `GET` | `/api/sessions/{id}/export` | Xuất báo cáo `.docx` (hỗ trợ `?restore_original_pii=true`) |
+| `GET` | `/api/sessions/{id}/export` | Xuất báo cáo đa định dạng (`?fmt=docx\|pdf\|csv\|md\|json` & `restore_original_pii`) |
 | `POST` | `/api/feedback` | Ghi nhận phản hồi Human-in-the-Loop (👍/👎) |
 | `GET` / `POST` | `/api/laws/*` | Tra cứu Vector RAG, upload file luật & cào luật từ URL *(Admin)* |
 | `GET` / `POST` | `/api/telemetry`, `/api/cache/*` | Giám sát độ trễ `p95`, chi phí & xóa Semantic Cache *(Admin)* |

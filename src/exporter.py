@@ -1,5 +1,8 @@
-# src/exporter.py — Corporate Legal Audit Word (.docx) Generator
+# src/exporter.py — Corporate Legal Audit Multi-Format Generator (.docx, .pdf A4, .csv, .md, .json)
+import csv
+import html
 import io
+import json
 import re
 from datetime import datetime
 from docx import Document
@@ -189,3 +192,248 @@ def generate_audit_docx(file_name: str, audit_data: dict) -> bytes:
     doc.save(buffer)
     buffer.seek(0)
     return buffer.getvalue()
+
+
+# ================= MULTI-FORMAT EXPORTERS (CSV / MARKDOWN / JSON / PDF A4) =================
+
+
+def _get_summary(audit_data: dict) -> str:
+    return _clean_text(audit_data.get("executive_summary") or audit_data.get("summary") or "")
+
+
+def _extract_clause_fields(c: dict) -> tuple[str, str, str, str]:
+    ref = _clean_text(c.get("ref") or c.get("clause") or c.get("name") or "")
+    topic = _clean_text(c.get("topic") or c.get("content") or c.get("summary") or c.get("issue") or "")
+    level = _clean_text(c.get("status") or c.get("severity") or c.get("level") or "")
+    action = _clean_text(c.get("action") or c.get("suggestion") or "")
+    note = _clean_text(c.get("note") or "")
+    full_action = f"{action} ({note})" if (action and note) else (action or note)
+    return ref, topic, level, full_action
+
+
+def _extract_scenarios(audit_data: dict) -> dict[str, str]:
+    raw = audit_data.get("negotiation_scenarios") or audit_data.get("scenarios") or {}
+    if not isinstance(raw, dict):
+        return {}
+    out = {}
+    for key in ("aggressive", "balanced", "conservative"):
+        val = raw.get(key)
+        if isinstance(val, dict):
+            text = _clean_text(val.get("strategy") or val.get("description") or "")
+        else:
+            text = _clean_text(val or "")
+        if text:
+            out[key] = text
+    return out
+
+
+def generate_audit_csv(file_name: str, audit_data: dict) -> bytes:
+    """Xuất bảng tổng hợp điều khoản rủi ro định dạng CSV (UTF-8-SIG BOM mở trực tiếp trên Excel không lỗi font)."""
+    buf = io.StringIO()
+    writer = csv.writer(buf)
+    writer.writerow(["Tài liệu", "Điểm rủi ro (/100)", "Mức độ tổng thể", "Điều khoản", "Chủ đề / Nội dung", "Mức độ rủi ro", "Khuyến nghị xử lý"])
+
+    risk_score = audit_data.get("risk_score", 0)
+    risk_level = audit_data.get("risk_level", "N/A")
+    clauses = audit_data.get("clauses") or []
+    if clauses:
+        for c in clauses:
+            ref, topic, level, full_action = _extract_clause_fields(c)
+            writer.writerow([
+                file_name,
+                risk_score,
+                risk_level,
+                ref,
+                topic,
+                level,
+                full_action,
+            ])
+    else:
+        writer.writerow([
+            file_name,
+            risk_score,
+            risk_level,
+            "Tổng quan",
+            _get_summary(audit_data),
+            risk_level,
+            _clean_text(audit_data.get("recommendation", "")),
+        ])
+
+    return buf.getvalue().encode("utf-8-sig")
+
+
+def generate_audit_markdown(file_name: str, audit_data: dict) -> bytes:
+    """Xuất báo cáo thẩm định chuẩn Markdown (.md) dùng cho Notion / GitHub / Confluence."""
+    now_str = datetime.now().strftime("%d/%m/%Y %H:%M")
+    summary_text = _get_summary(audit_data) or "Chưa có dữ liệu."
+    lines = [
+        f"# Báo Cáo Thẩm Định Pháp Lý — {file_name}",
+        f"*Thời điểm xuất: {now_str} · Hệ thống SecureDoc AI*",
+        "",
+        f"- **Điểm rủi ro:** `{audit_data.get('risk_score', 0)}/100` ({audit_data.get('risk_level', 'N/A')})",
+        "",
+        "## 1. Nhận Định Tổng Quan",
+        summary_text,
+        "",
+        f"**Khuyến nghị hành động:** {_clean_text(audit_data.get('recommendation', ''))}",
+        "",
+    ]
+
+    clauses = audit_data.get("clauses") or []
+    if clauses:
+        lines.append("## 2. Bảng Chi Tiết Điều Khoản Rủi Ro")
+        lines.append("| Điều khoản | Chủ đề / Nội dung | Mức độ | Hành động khuyến nghị |")
+        lines.append("| :--- | :--- | :---: | :--- |")
+        for c in clauses:
+            ref, topic, level, full_action = _extract_clause_fields(c)
+            lines.append(
+                f"| {ref.replace('|', '/')} | {topic.replace('|', '/')} | {level.replace('|', '/')} | {full_action.replace('|', '/')} |"
+            )
+        lines.append("")
+
+    redline = audit_data.get("redline_diff") or {}
+    if redline.get("original") or redline.get("revised"):
+        lines.append("## 3. Đề Xuất Sửa Đổi Điều Khoản (Redline Diff)")
+        if redline.get("original"):
+            lines.append(f"- **Bản gốc bất lợi:** ~~{_clean_text(redline['original'])}~~")
+        if redline.get("revised"):
+            lines.append(f"- **Đề xuất sửa đổi:** **{_clean_text(redline['revised'])}**")
+        lines.append("")
+
+    scenarios = _extract_scenarios(audit_data)
+    if scenarios:
+        lines.append("## 4. Ma Trận 3 Kịch Bản Đàm Phán")
+        if scenarios.get("aggressive"):
+            lines.append(f"- **🔴 Kịch bản Cứng rắn:** {scenarios['aggressive']}")
+        if scenarios.get("balanced"):
+            lines.append(f"- **🟡 Kịch bản Cân bằng (Win-Win):** {scenarios['balanced']}")
+        if scenarios.get("conservative"):
+            lines.append(f"- **🟢 Kịch bản Phòng thủ:** {scenarios['conservative']}")
+        lines.append("")
+
+    laws = audit_data.get("retrieved_laws") or []
+    if laws:
+        lines.append("## 5. Căn Cứ Pháp Luật Việt Nam Đối Chiếu (Legal RAG)")
+        for l in laws:
+            lines.append(f"- **{l.get('law_name', '')} — {l.get('article', '')}:** {l.get('title', '')}")
+
+    return "\n".join(lines).encode("utf-8")
+
+
+def generate_audit_json(file_name: str, audit_data: dict) -> bytes:
+    """Xuất toàn bộ dữ liệu thẩm định dạng JSON có cấu trúc chuẩn tích hợp ERP/API."""
+    payload = {
+        "exported_at": datetime.now().isoformat(),
+        "system": "SecureDoc AI — Enterprise Legal Copilot",
+        "file_name": file_name,
+        "audit": audit_data,
+    }
+    return json.dumps(payload, ensure_ascii=False, indent=2).encode("utf-8")
+
+
+def generate_audit_print_html(file_name: str, audit_data: dict) -> bytes:
+    """Tạo bản báo cáo chuẩn khổ giấy A4 (tiếng Việt 100% sắc nét) tự động mở hộp thoại Lưu/In PDF."""
+    esc = lambda v: html.escape(_clean_text(str(v or "")))
+    now_str = datetime.now().strftime("%d/%m/%Y %H:%M")
+    score = int(audit_data.get("risk_score", 0) or 0)
+    level = esc(audit_data.get("risk_level", "N/A"))
+    score_color = "#DC2626" if score >= 65 else ("#D97706" if score >= 35 else "#059669")
+
+    clause_rows = ""
+    for c in (audit_data.get("clauses") or []):
+        ref, topic, sev, full_action = _extract_clause_fields(c)
+        clause_rows += f"""
+        <tr>
+          <td><b>{esc(ref)}</b></td>
+          <td>{esc(topic)}</td>
+          <td><span class="badge">{esc(sev)}</span></td>
+          <td>{esc(full_action)}</td>
+        </tr>"""
+
+    redline = audit_data.get("redline_diff") or {}
+    redline_html = ""
+    if redline.get("original") or redline.get("revised"):
+        redline_html = f"""
+        <h2>3. Đề Xuất Sửa Đổi Điều Khoản (Redline Diff)</h2>
+        <div class="redline-box">
+          <p><b style="color:#DC2626;">• Bản gốc bất lợi:</b> <del style="color:#B91C1C;">{esc(redline.get('original'))}</del></p>
+          <p><b style="color:#059669;">• Đề xuất sửa đổi:</b> <span style="color:#047857;font-weight:600;">{esc(redline.get('revised'))}</span></p>
+        </div>"""
+
+    scenarios = _extract_scenarios(audit_data)
+    scenarios_html = ""
+    if scenarios:
+        scenarios_html = f"""
+        <h2>4. Ma Trận 3 Kịch Bản Đàm Phán</h2>
+        <div class="grid3">
+          <div class="box red"><b>🔴 Cứng rắn</b><p>{esc(scenarios.get('aggressive'))}</p></div>
+          <div class="box amber"><b>🟡 Cân bằng (Win-Win)</b><p>{esc(scenarios.get('balanced'))}</p></div>
+          <div class="box green"><b>🟢 Phòng thủ</b><p>{esc(scenarios.get('conservative'))}</p></div>
+        </div>"""
+
+    laws_html = ""
+    laws = audit_data.get("retrieved_laws") or []
+    if laws:
+        items = "".join(f"<li><b>{esc(l.get('law_name'))} — {esc(l.get('article'))}:</b> {esc(l.get('title'))}</li>" for l in laws)
+        laws_html = f"<h2>5. Căn Cứ Pháp Luật Việt Nam Đối Chiếu (Legal RAG)</h2><ul>{items}</ul>"
+
+    doc_html = f"""<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<title>Báo Cáo Thẩm Định Pháp Lý — {esc(file_name)}</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  @page {{ size: A4; margin: 16mm; }}
+  body {{ font-family: 'Inter', system-ui, sans-serif; color: #0F172A; margin: 0; padding: 24px; background: #F8FAFC; }}
+  .sheet {{ max-width: 820px; margin: 0 auto; background: #fff; padding: 36px 40px; border-radius: 14px; box-shadow: 0 8px 30px rgba(15,23,42,0.08); }}
+  .toolbar {{ max-width: 820px; margin: 0 auto 14px; display: flex; justify-content: flex-end; gap: 10px; }}
+  .btn {{ padding: 9px 18px; border-radius: 999px; border: none; background: #0047FF; color: #fff; font-weight: 600; font-size: 13px; cursor: pointer; }}
+  .head {{ display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #0047FF; padding-bottom: 14px; margin-bottom: 20px; }}
+  .brand {{ font-size: 18px; font-weight: 700; color: #0047FF; }}
+  .meta {{ font-size: 12px; color: #64748B; text-align: right; }}
+  .score-card {{ display: flex; align-items: center; gap: 18px; padding: 16px 20px; border-radius: 12px; background: #F8FAFF; border: 1px solid #DBEAFE; margin-bottom: 20px; }}
+  .score-num {{ font-size: 32px; font-weight: 700; color: {score_color}; min-width: 96px; text-align: center; }}
+  h1 {{ font-size: 20px; margin: 0 0 6px; color: #0F2147; }}
+  h2 {{ font-size: 14.5px; color: #0047FF; margin: 22px 0 10px; text-transform: uppercase; letter-spacing: .03em; }}
+  p, li {{ font-size: 13px; line-height: 1.6; }}
+  table {{ width: 100%; border-collapse: collapse; font-size: 12.5px; margin-top: 8px; }}
+  th, td {{ border: 1px solid #E2E8F0; padding: 8px 10px; text-align: left; vertical-align: top; }}
+  th {{ background: #F1F5F9; font-weight: 700; color: #0F2147; }}
+  .badge {{ display: inline-block; padding: 2px 8px; border-radius: 999px; background: #EFF6FF; color: #1E40AF; font-weight: 600; font-size: 11.5px; }}
+  .redline-box {{ padding: 12px 16px; border-radius: 10px; background: #F8FAFC; border: 1px solid #E2E8F0; }}
+  .grid3 {{ display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }}
+  .box {{ padding: 12px; border-radius: 10px; border: 1px solid #E2E8F0; font-size: 12.5px; }}
+  .box.red {{ background: #FEF2F2; border-color: #FECACA; }}
+  .box.amber {{ background: #FFFBEB; border-color: #FDE68A; }}
+  .box.green {{ background: #ECFDF5; border-color: #A7F3D0; }}
+  .footer {{ margin-top: 28px; padding-top: 12px; border-top: 1px solid #E2E8F0; font-size: 11px; color: #94A3B8; text-align: center; }}
+  @media print {{ body {{ background: #fff; padding: 0; }} .sheet {{ box-shadow: none; padding: 0; }} .toolbar {{ display: none; }} }}
+</style>
+</head>
+<body>
+  <div class="toolbar">
+    <button class="btn" onclick="window.print()">🖨️ Lưu / In báo cáo PDF (A4)</button>
+  </div>
+  <div class="sheet">
+    <div class="head">
+      <div><div class="brand">✦ SecureDoc AI</div><div style="font-size:12px;color:#475569;">Báo Cáo Thẩm Định Rủi Ro &amp; Đối Chiếu Pháp Luật Việt Nam</div></div>
+      <div class="meta"><b>Tài liệu:</b> {esc(file_name)}<br><b>Ngày xuất:</b> {now_str}</div>
+    </div>
+    <div class="score-card">
+      <div class="score-num">{score}/100</div>
+      <div><div style="font-weight:700;font-size:15px;color:#0F2147;">Mức độ rủi ro: {level}</div><div style="font-size:12.5px;color:#475569;margin-top:4px;">{esc(audit_data.get('recommendation'))}</div></div>
+    </div>
+    <h2>1. Nhận Định Pháp Lý Tổng Quan</h2>
+    <p>{esc(_get_summary(audit_data))}</p>
+    <h2>2. Bảng Chi Tiết Điều Khoản Rủi Ro</h2>
+    <table><thead><tr><th style="width:16%">Điều khoản</th><th style="width:40%">Chủ đề / Nội dung</th><th style="width:14%">Mức độ</th><th style="width:30%">Đề xuất xử lý</th></tr></thead><tbody>{clause_rows or '<tr><td colspan="4">Không phát hiện điều khoản rủi ro đáng kể.</td></tr>'}</tbody></table>
+    {redline_html}
+    {scenarios_html}
+    {laws_html}
+    <div class="footer">Tài liệu được tạo tự động bởi SecureDoc AI · Bảo mật PII Token Vault &amp; Legal Vector RAG</div>
+  </div>
+  <script>window.addEventListener('load', () => setTimeout(() => window.print(), 350));</script>
+</body>
+</html>"""
+    return doc_html.encode("utf-8")

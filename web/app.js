@@ -711,19 +711,81 @@
     });
   }
 
-  // Export .docx (hỗ trợ tùy chọn giải mã PII gốc từ PII Vault)
-  if (btnExportDocx) {
-    btnExportDocx.addEventListener('click', () => {
-      if (!currentSessionId) {
-        alert('Chưa chọn phiên làm việc để xuất báo cáo.');
-        return;
-      }
-      const restoreCheckbox = document.getElementById('toggle-restore-pii');
-      const restorePii = restoreCheckbox && restoreCheckbox.checked ? 'true' : 'false';
-      const token = localStorage.getItem('securedoc_access_token');
-      const params = new URLSearchParams({ restore_original_pii: restorePii });
-      if (token) params.set('token', token);
-      window.location.href = `/api/sessions/${currentSessionId}/export?${params.toString()}`;
+  // Export đa định dạng (.docx, .pdf A4, .csv Excel, .md, .json) kèm tùy chọn giải mã PII gốc
+  const exportMenu = document.getElementById('export-format-menu');
+  if (btnExportDocx && exportMenu) {
+    btnExportDocx.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const isOpen = exportMenu.style.display === 'block';
+      closeAllMenus();
+      exportMenu.style.display = isOpen ? 'none' : 'block';
+    });
+
+    exportMenu.querySelectorAll('.export-fmt-item').forEach(item => {
+      item.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        exportMenu.style.display = 'none';
+        if (!currentSessionId) {
+          alert('Chưa chọn phiên làm việc để xuất báo cáo.');
+          return;
+        }
+        const fmt = item.dataset.fmt || 'docx';
+        const restoreCheckbox = document.getElementById('toggle-restore-pii');
+        const restorePii = restoreCheckbox && restoreCheckbox.checked ? 'true' : 'false';
+        const params = new URLSearchParams({ fmt, restore_original_pii: restorePii });
+        const url = `/api/sessions/${currentSessionId}/export?${params.toString()}`;
+
+        let printWin = null;
+        if (fmt === 'pdf') {
+          printWin = window.open('', '_blank');
+        }
+
+        try {
+          const res = await fetch(url);
+          if (!res.ok) {
+            if (printWin) printWin.close();
+            const err = await res.json().catch(() => ({}));
+            alert(err.detail || 'Không thể xuất báo cáo cho phiên này.');
+            return;
+          }
+
+          if (fmt === 'pdf') {
+            const htmlText = await res.text();
+            if (printWin) {
+              printWin.document.open();
+              printWin.document.write(htmlText);
+              printWin.document.close();
+            } else {
+              const blob = new Blob([htmlText], { type: 'text/html;charset=utf-8' });
+              window.open(URL.createObjectURL(blob), '_blank');
+            }
+            return;
+          }
+
+          const blob = await res.blob();
+          const cd = res.headers.get('Content-Disposition') || '';
+          let filename = `Bao_Cao_Tham_Dinh.${fmt}`;
+          const utf8Match = cd.match(/filename\*=UTF-8''([^;]+)/i);
+          if (utf8Match && utf8Match[1]) {
+            filename = decodeURIComponent(utf8Match[1]);
+          }
+          const dlUrl = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = dlUrl;
+          a.download = filename;
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          setTimeout(() => URL.revokeObjectURL(dlUrl), 1500);
+        } catch (err) {
+          if (printWin) printWin.close();
+          alert(`Lỗi khi xuất báo cáo: ${err.message}`);
+        }
+      });
+    });
+
+    document.addEventListener('click', () => {
+      exportMenu.style.display = 'none';
     });
   }
 
