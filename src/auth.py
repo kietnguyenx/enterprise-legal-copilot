@@ -146,11 +146,8 @@ def require_admin(user: AuthUser = Depends(get_current_user)) -> AuthUser:
 
 
 def can_access_session(session: dict, user: AuthUser) -> bool:
-    """Kiểm tra quyền sở hữu phiên thẩm định (User Isolation & RBAC)."""
-    if user.role == "admin":
-        return True
+    """Kiểm tra quyền sở hữu phiên thẩm định (User Isolation): tài khoản mới không bao giờ dính phiên Guest/mẫu."""
     owner_id = session.get("owner_id")
-    # Nếu phiên chưa gắn owner_id (dữ liệu cũ hoặc tạo bởi guest)
-    if not owner_id or owner_id == "guest":
-        return not user.is_authenticated or owner_id in (None, "guest", user.id)
-    return owner_id == user.id
+    if user.is_authenticated:
+        return owner_id == user.id
+    return not owner_id or owner_id == "guest"

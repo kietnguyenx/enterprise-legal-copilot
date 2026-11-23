@@ -12,7 +12,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/static/style.css?v=20261120h">
+<link rel="stylesheet" href="/static/style.css?v=20261123d">
 </head>
 <body>
 
@@ -64,9 +64,7 @@
   <button class="nav s15 btn-open-inspector" id="btn-audit-full-inspector" style="display:none"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M9 9h6v6H9z"/></svg>AI System &amp; RAG</button>
   <div class="lbl">Pinned Projects</div>
   <div id="audit-pinned-list" class="pinned-list-container">
-    <button class="nav"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h7l4 4v14H7zM14 3v4h4"/></svg>HĐ thuê văn phòng Q4</button>
-    <button class="nav"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h7l4 4v14H7zM14 3v4h4"/></svg>HĐ cung cấp phần mềm</button>
-    <button class="nav"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h7l4 4v14H7zM14 3v4h4"/></svg>NDA đối tác Nhật Bản</button>
+    <div style="font-size:12px;color:rgba(214,226,255,0.62);padding:8px 14px;">Chưa có tài liệu đã lưu.</div>
   </div>
   <div class="s16" style="flex:1"></div>
   <div class="user-profile-slot" style="position:relative;margin-top:14px;">
@@ -268,9 +266,7 @@
   <button class="nav s15 btn-open-inspector" id="btn-home-inspector" style="display:none"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M9 9h6v6H9z"/></svg>AI System &amp; RAG</button>
   <div class="lbl">Pinned Projects</div>
   <div id="home-pinned-list">
-    <button class="nav"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h7l4 4v14H7zM14 3v4h4"/></svg>HĐ thuê văn phòng Q4</button>
-    <button class="nav"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h7l4 4v14H7zM14 3v4h4"/></svg>HĐ cung cấp phần mềm</button>
-    <button class="nav"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h7l4 4v14H7zM14 3v4h4"/></svg>NDA đối tác Nhật Bản</button>
+    <div style="font-size:12px;color:rgba(214,226,255,0.62);padding:8px 14px;">Chưa có tài liệu đã lưu.</div>
   </div>
   <div class="s16" style="flex:1"></div>
   <div class="user-profile-slot" style="position:relative;margin-top:14px;">
@@ -343,9 +339,7 @@
 <label for="hist-off" role="button" aria-label="Thu gọn History" class="s47" title="Thu gọn Lịch sử"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h6M20 12h-6M7 9l3 3-3 3M17 9l-3 3 3 3"/></svg></label>
 <header class="s48"><h2 class="s49">History</h2><span class="s50" id="hist-count-badge">0/50</span></header>
 <div class="s51" id="home-history-list">
-<label class="hi s52"><input type="checkbox" aria-label="Chọn" class="hist-checkbox"><div><b>Thẩm định HĐ thuê văn phòng</b><span>Audit Risk · 3 rủi ro cao, điểm 72/100</span></div></label>
-<label class="hi"><input type="checkbox" aria-label="Chọn" class="hist-checkbox"><div><b>Soạn email phản hồi khách</b><span>Viết email xác nhận gia hạn hợp đồng…</span></div></label>
-<label class="hi"><input type="checkbox" aria-label="Chọn" class="hist-checkbox"><div><b>So sánh điều khoản bảo mật</b><span>Đối chiếu điều khoản NDA hai bên</span></div></label>
+<div style="font-size:12.5px;color:#64748B;text-align:center;padding:28px 14px;line-height:1.55;">Chưa có lịch sử thẩm định.<br>Tải hợp đồng lên hoặc bắt đầu trò chuyện!</div>
 </div>
 <div class="s53"><button class="s54" id="btn-clear-history"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg>Clear history</button></div>
 </aside>
@@ -435,6 +429,8 @@
   <div class="sky s4" aria-hidden="true"></div>
   <div class="met s5" aria-hidden="true"></div>
   <div class="met s6" aria-hidden="true"></div>
+  <div class="met s7" aria-hidden="true"></div>
+  <div class="met s8" aria-hidden="true"></div>
   <div class="mob-drawer-head">
     <div style="display:flex;align-items:center;gap:8px;font-weight:700;font-size:17px;color:#fff;">
       <svg width="34" height="34" viewBox="0 0 64 64" aria-hidden="true" style="filter:drop-shadow(0 0 10px rgba(156,195,255,0.65));flex-shrink:0;"><defs><linearGradient id="gi-mob-drawer" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFFFFF"/><stop offset=".5" stop-color="#9CC3FF"/><stop offset="1" stop-color="#4D88FF"/></linearGradient></defs><path d="M28 10Q30 34 54 36Q30 38 28 62Q26 38 2 36Q26 34 28 10Z" fill="url(#gi-mob-drawer)"/><path d="M28 10Q30 34 54 36Q30 38 28 62Q26 38 2 36Q26 34 28 10Z" fill="#fff" transform="translate(28 36) scale(.42) translate(-28 -36)"/><path d="M50 5Q51.3 12.7 59 14Q51.3 15.3 50 23Q48.7 15.3 41 14Q48.7 12.7 50 5Z" fill="url(#gi-mob-drawer)"/></svg>
@@ -466,7 +462,7 @@
   </div>
 </aside>
 
-<script src="/static/app.js?v=20261123b"></script>
+<script src="/static/app.js?v=20261123c"></script>
 <script>
 // Bóc tách thông tin người dùng nếu vừa được Supabase OAuth chuyển hướng về
 function parseSupabaseOAuthHash() {

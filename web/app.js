@@ -190,11 +190,7 @@
           </button>
         `).join('');
       } else {
-        container.innerHTML = `
-          <button class="nav" style="width:100%;text-align:left;"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h7l4 4v14H7zM14 3v4h4"/></svg>HĐ thuê văn phòng Q4</button>
-          <button class="nav" style="width:100%;text-align:left;"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h7l4 4v14H7zM14 3v4h4"/></svg>HĐ cung cấp phần mềm</button>
-          <button class="nav" style="width:100%;text-align:left;"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h7l4 4v14H7zM14 3v4h4"/></svg>NDA đối tác Nhật Bản</button>
-        `;
+        container.innerHTML = `<div style="font-size:12px;color:rgba(214,226,255,0.62);padding:8px 14px;">Chưa có tài liệu đã lưu.</div>`;
       }
 
       container.querySelectorAll('.nav[data-id]').forEach(btn => {
@@ -238,7 +234,13 @@
             openSession(sid);
           });
         });
+      } else {
+        homeHistoryList.innerHTML = `<div style="font-size:12.5px;color:#64748B;text-align:center;padding:28px 14px;line-height:1.55;">Chưa có lịch sử thẩm định.<br>Tải hợp đồng lên hoặc bắt đầu trò chuyện!</div>`;
       }
+    }
+
+    if (typeof renderMobileDrawerHistory === 'function') {
+      renderMobileDrawerHistory();
     }
   }
 

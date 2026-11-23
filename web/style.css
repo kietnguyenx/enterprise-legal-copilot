@@ -2194,13 +2194,15 @@ body.resizing-col * {
     gap: 6px;
   }
 
-  /* Trang chủ gọn vừa khít 1 màn hình điện thoại */
+  /* Trang chủ gọn vừa khít 1 màn hình điện thoại: Hero ở giữa-trên, 3 nút ngang + khung chat ở dưới */
   .view-home .s24 {
-    padding: 12px 14px 20px !important;
+    padding: 12px 14px 16px !important;
     min-height: 100dvh;
+    display: flex !important;
+    flex-direction: column !important;
   }
   .view-home .s25 {
-    padding: 4px 0 10px !important;
+    padding: 4px 0 8px !important;
     gap: 8px;
     flex-wrap: nowrap;
   }
@@ -2210,49 +2212,105 @@ body.resizing-col * {
     white-space: nowrap;
   }
   .view-home .s27 {
-    padding: 8px 0 16px !important;
-    gap: 14px !important;
+    flex: 1 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: flex-end !important;
+    padding: 6px 0 6px !important;
+    gap: 10px !important;
   }
   .view-home .s28 {
-    margin-bottom: 4px !important;
+    order: 1 !important;
+    flex: 1 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    margin-bottom: 6px !important;
   }
   .view-home .s29 {
-    width: 56px !important;
-    height: 56px !important;
+    width: 60px !important;
+    height: 60px !important;
     margin-bottom: 10px !important;
   }
   .view-home .s30 {
-    width: 44px !important;
-    height: 44px !important;
+    width: 46px !important;
+    height: 46px !important;
   }
   .view-home .s31 {
     font-size: 24px !important;
     line-height: 1.25 !important;
-    margin-bottom: 6px !important;
+    margin: 6px 0 6px !important;
   }
   .view-home .s33 {
     font-size: 13px !important;
     line-height: 1.45 !important;
-    padding: 0 4px;
+    margin: 0 !important;
+    padding: 0 6px;
   }
-  /* Đưa ô nhập chat lên ngay dưới lời chào trước 3 thẻ gợi ý trên điện thoại */
-  .view-home .s34 {
-    order: 2;
-    padding: 12px !important;
-    border-radius: 18px !important;
-  }
+  /* 3 nút tiện ích nằm ngang 1 hàng gọn gàng ngay phía trên khung chat (CHỈ MOBILE) */
   .view-home .s41 {
-    order: 3;
+    order: 2 !important;
     display: grid !important;
-    grid-template-columns: 1fr !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
     gap: 8px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    box-sizing: border-box !important;
   }
   .view-home .s42 {
-    padding: 11px 14px !important;
+    min-width: 0 !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    overflow: hidden !important;
+    padding: 9px 6px !important;
+    border-radius: 14px !important;
+    text-align: center !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 3px !important;
+    min-height: 60px !important;
+  }
+  .view-home .s42 br {
+    display: none !important;
+  }
+  .view-home .s43 {
+    font-size: 11.5px !important;
+    font-weight: 700 !important;
+    line-height: 1.2 !important;
+    white-space: nowrap !important;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .view-home .s44 {
+    font-size: 10px !important;
+    line-height: 1.28 !important;
+    white-space: normal !important;
+    display: -webkit-box !important;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  /* Khung nhập chat nằm dưới cùng trên điện thoại */
+  .view-home .s34 {
+    order: 3 !important;
+    width: 100% !important;
+    padding: 12px 14px 10px !important;
+    border-radius: 22px !important;
+    box-shadow: 0 8px 24px rgba(15, 33, 71, 0.08) !important;
+  }
+  .view-home .s36 {
+    font-size: 15px !important;
   }
   .view-home .s45 {
-    order: 4;
-    font-size: 11.5px !important;
+    order: 4 !important;
+    margin: 4px 0 0 !important;
+    font-size: 11px !important;
+    text-align: center !important;
   }
 
   /* Trang Thẩm định (#audit) tối ưu cho màn hình dọc điện thoại */
@@ -2484,8 +2542,20 @@ body.resizing-col * {
   bottom: 0;
   width: min(300px, 84vw);
   z-index: 9999;
+  isolation: isolate;
   overflow: hidden;
-  background: linear-gradient(180deg, #07163E 0%, #0D276B 55%, #163E9C 100%);
+  background:
+    radial-gradient(ellipse 80% 22% at 15% 28%, rgba(150, 120, 255, .4), transparent 70%),
+    radial-gradient(1.5px 1.5px at 18% 12%, #fff, transparent),
+    radial-gradient(1px 1px at 72% 8%, #cfe0ff, transparent),
+    radial-gradient(1.5px 1.5px at 88% 24%, #fff, transparent),
+    radial-gradient(1px 1px at 9% 40%, #cfe0ff, transparent),
+    radial-gradient(1.5px 1.5px at 60% 52%, #fff, transparent),
+    radial-gradient(1px 1px at 30% 66%, #cfe0ff, transparent),
+    radial-gradient(1.5px 1.5px at 82% 78%, #fff, transparent),
+    radial-gradient(ellipse 120% 40% at 50% 100%, rgba(61, 123, 255, .65), transparent 70%),
+    radial-gradient(ellipse 90% 30% at 100% 0%, rgba(47, 107, 255, .4), transparent 70%),
+    linear-gradient(180deg, #030B2B 0%, #071C5E 55%, #0B3A9E 100%);
   color: #FFFFFF;
   display: flex;
   flex-direction: column;
@@ -2495,6 +2565,36 @@ body.resizing-col * {
   transform: translateX(-105%);
   transition: transform 0.26s cubic-bezier(0.22, 1, 0.36, 1);
 }
+.mobile-drawer .sky {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  animation: tw-home 3.5s ease-in-out infinite;
+  background:
+    radial-gradient(2px 2px at 14% 6%, #fff, transparent),
+    radial-gradient(2px 2px at 46% 18%, #fff, transparent),
+    radial-gradient(1.5px 1.5px at 92% 36%, #fff, transparent),
+    radial-gradient(2px 2px at 24% 58%, #fff, transparent),
+    radial-gradient(1.5px 1.5px at 66% 44%, #cfe0ff, transparent),
+    radial-gradient(2px 2px at 8% 74%, #fff, transparent),
+    radial-gradient(1.5px 1.5px at 78% 62%, #fff, transparent),
+    radial-gradient(1.5px 1.5px at 40% 33%, #cfe0ff, transparent);
+}
+.mobile-drawer .met {
+  position: absolute;
+  z-index: 1;
+  width: 96px;
+  height: 2px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, #fff, transparent);
+  animation: m-home 6s linear infinite;
+  pointer-events: none;
+}
+.mobile-drawer .s5 { top: 60px; left: 260px; }
+.mobile-drawer .s6 { top: 220px; left: 280px; animation-delay: 2s; animation-duration: 5s; }
+.mobile-drawer .s7 { top: 420px; left: 250px; animation-delay: 3.5s; width: 70px; }
+.mobile-drawer .s8 { top: 130px; left: 200px; animation-delay: 1s; animation-duration: 7s; width: 130px; }
 .mobile-drawer > :not(.sky):not(.met) {
   position: relative;
   z-index: 2;
