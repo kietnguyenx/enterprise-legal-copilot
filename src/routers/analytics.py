@@ -117,15 +117,11 @@ def api_clear_cache(_admin: AuthUser = Depends(require_admin)):
 
 @router.get("/api/models")
 def list_models():
-    """Danh sách các model khả dụng (Cloud Gemini + On-Premise Ollama)"""
+    """Danh sách các model khả dụng (Cloud Gemini + Qwen 3.5)"""
     ollama_ready = check_ollama_status()
     result = []
     for m in MODELS:
         item = dict(m)
-        if "ollama" in item["id"]:
-            item["available"] = ollama_ready
-            item["label"] = item["label"] + (" (Sẵn sàng)" if ollama_ready else " (Offline)")
-        else:
-            item["available"] = True
+        item["available"] = ollama_ready if "ollama" in item["id"] else True
         result.append(item)
     return result

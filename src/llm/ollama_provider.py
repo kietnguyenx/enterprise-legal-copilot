@@ -1,6 +1,6 @@
 """
 SecureDoc AI — On-Premise Ollama Provider
-Handles local LLM inference (e.g. Qwen 2.5) for air-gapped private deployments.
+Handles local LLM inference (e.g. Qwen 3.5) for air-gapped private deployments.
 """
 import os
 import json
@@ -20,7 +20,7 @@ def check_ollama_status() -> bool:
         return False
 
 
-def call_ollama(prompt: str, model: str = "qwen2.5:latest", json_mode: bool = False) -> str:
+def call_ollama(prompt: str, model: str = "qwen3.5:latest", json_mode: bool = False) -> str:
     """Gọi mô hình nội bộ Ollama on-premise"""
     clean_model = model.replace("ollama:", "")
     payload = {
@@ -40,7 +40,7 @@ def call_ollama(prompt: str, model: str = "qwen2.5:latest", json_mode: bool = Fa
         return res.get("response", "")
 
 
-def stream_ollama(prompt: str, model: str = "qwen2.5:latest") -> Generator[str, None, None]:
+def stream_ollama(prompt: str, model: str = "qwen3.5:latest") -> Generator[str, None, None]:
     """Stream token từ mô hình nội bộ Ollama on-premise"""
     clean_model = model.replace("ollama:", "")
     payload = {

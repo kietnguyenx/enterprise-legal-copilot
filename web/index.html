@@ -156,7 +156,7 @@
 </div></header>
 <div class="card s90">
 <svg width="104" height="104" viewBox="0 0 104 104" role="img" aria-label="Risk Score 72 trên 100"><circle cx="52" cy="52" r="42" fill="none" stroke="#E6EBF7" stroke-width="10"/><circle id="audit-gauge-circle" cx="52" cy="52" r="42" fill="none" stroke="#C2410C" stroke-width="10" stroke-linecap="round" stroke-dasharray="190 264" transform="rotate(-90 52 52)"/><text id="audit-gauge-score" x="52" y="58" text-anchor="middle" font-size="26" font-weight="700" fill="#0F2147" font-family="Inter">72</text></svg>
-<div><p class="h s91">Risk Score / 100</p><div class="s92" id="audit-risk-desc">Rủi ro pháp lý cao</div><div class="s93" id="audit-risk-sub">16 điều khoản được rà soát · cần sửa 3 điều khoản trước khi ký</div></div></div>
+<div><p class="h s91">Risk Score / 100</p><div class="s92" id="audit-risk-desc">Rủi ro pháp lý cao</div><div class="s93" id="audit-risk-sub">16 điều khoản được rà soát · cần sửa 3 điều khoản trước khi ký</div><div id="audit-verification-bar" style="display:none;margin-top:8px;font-size:11.5px;font-weight:600;padding:5px 10px;border-radius:999px;width:fit-content;"></div></div></div>
 <div class="card s94">
 <div class="row s95"><span>Điều</span><span>Nội dung</span><span>Mức độ</span><span>Hành động</span></div>
 <div id="audit-clause-rows">
@@ -466,7 +466,7 @@
   </div>
 </aside>
 
-<script src="/static/app.js?v=20261122a"></script>
+<script src="/static/app.js?v=20261123b"></script>
 <script>
 // Bóc tách thông tin người dùng nếu vừa được Supabase OAuth chuyển hướng về
 function parseSupabaseOAuthHash() {

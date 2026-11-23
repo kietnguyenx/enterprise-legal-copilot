@@ -327,3 +327,103 @@ def test_export_da_dinh_dang_docx_pdf_csv_md_json():
     finally:
         with _lock:
             SESSIONS.pop(sid, None)
+
+
+def test_topical_guardrail_chan_cau_hoi_ngoai_le_va_giu_cau_hoi_phap_ly():
+    """Topical Guardrail (Zero-Token): Chặn câu hỏi ngoài phạm vi Pháp luật/Hợp đồng & không chặn nhầm câu hỏi hợp lệ"""
+    off_topic_prompts = [
+        "Chỉ tôi cách nấu phở bò ngon nhất",
+        "Viết code Python làm game rắn săn mồi giúp tôi",
+        "Giải phương trình bậc 2 giúp tôi với",
+        "Xem tử vi cung Bạch Dương hôm nay",
+        "Đau đầu thì nên uống thuốc gì?",
+    ]
+    for p in off_topic_prompts:
+        ok, cat, msg = check_input_guardrails(p)
+        assert ok is False, f"Phải chặn câu hỏi lạc đề: {p}"
+        assert cat == "out_of_scope"
+        assert "Ngoài phạm vi chuyên môn" in msg
+
+    # Kiểm tra trực tiếp endpoint /api/chat chặn ngay ở tầng Guardrail (0 token LLM)
+    res = client.post(
+        "/api/chat",
+        json={"message": "Viết code Python làm game rắn săn mồi giúp tôi"},
+        headers={"X-User-Email": "lawyer.qa@company.vn"},
+    )
+    assert res.status_code == 200
+    assert res.headers.get("x-guardrail-blocked") == "true"
+    assert res.headers.get("x-category") == "out_of_scope"
+
+    # Câu hỏi hợp lệ có chứa từ nhạy cảm chồng lấn (code/phần mềm/nấu ăn) nhưng thuộc ngữ cảnh hợp đồng PHẢI ĐƯỢC QUA
+    valid_legal_prompts = [
+        "Hợp đồng gia công phần mềm quy định bàn giao viết code và bản quyền thế nào?",
+        "Điều khoản phạt 20% trong hợp đồng cung cấp suất ăn nấu ăn cho công ty có trái luật không?",
+        "Xin chào, bạn giúp tôi rà soát rủi ro hợp đồng thuê văn phòng được không?",
+    ]
+    for p in valid_legal_prompts:
+        ok, cat, _ = check_input_guardrails(p)
+        assert ok is True and cat == "clean", f"Không được chặn nhầm câu hỏi pháp lý hợp lệ: {p}"
+
+
+def test_legal_verifier_chong_sot_dieu_khoan_va_chong_ao_giac_trich_dan():
+    """Kiểm định 3 lớp: Bóc tách Điều khoản gốc, Multi-Query RAG, phát hiện sót/bịa số Điều, tự đồng bộ số liệu & neo trích dẫn"""
+    from src.legal_kb import get_rag_engine
+    from src.legal_verifier import (
+        extract_document_clauses,
+        retrieve_laws_multi_query,
+        verify_and_reconcile_audit,
+    )
+
+    sample_contract = (
+        "HỢP ĐỒNG DỊCH VỤ PHẦN MỀM\n"
+        "Điều 1: Đối tượng hợp đồng\n"
+        "Bên B cung cấp hệ thống quản lý bán hàng cho Bên A.\n"
+        "Điều 2: Phạt vi phạm\n"
+        "Nếu Bên B bàn giao trễ hạn sẽ chịu mức phạt vi phạm 25% tổng giá trị hợp đồng.\n"
+        "Điều 3: Bảo mật dữ liệu cá nhân\n"
+        "Hai bên có trách nhiệm bảo mật dữ liệu cá nhân khách hàng và thông tin CCCD.\n"
+        "Điều 4: Chấm dứt hợp đồng\n"
+        "Bên A có quyền đơn phương chấm dứt hợp đồng bất cứ lúc nào mà không cần báo trước.\n"
+    )
+
+    # 1. Clause Extractor phải bóc đủ 4 Điều
+    extracted = extract_document_clauses(sample_contract)
+    assert [c["ref"] for c in extracted] == ["Điều 1", "Điều 2", "Điều 3", "Điều 4"]
+
+    # 2. Multi-Query RAG phải gom được nhiều điều luật cho các chủ đề khác nhau
+    laws = retrieve_laws_multi_query(get_rag_engine(), sample_contract, extracted, max_laws=6)
+    assert len(laws) >= 4
+
+    # 3. Verifier phát hiện bỏ sót Điều 4, bịa Điều 99, tự sửa số đếm sai & tự neo trích dẫn lệch nhẹ
+    mock_llm_output = {
+        "risk_score": 85,
+        "risk_level": "HIGH RISK",
+        "executive_summary": "Hợp đồng có mức phạt vượt trần theo Điều 301 và vi phạm Điều 999.",
+        "recommendation": "Điều chỉnh phạt về 8% theo Điều 301 Luật Thương mại.",
+        "risk_counts": {"high": 99, "medium": 0, "low": 0},  # LLM đếm bậy
+        "clauses": [
+            {"ref": "Điều 1", "topic": "Đối tượng", "status": "Thấp", "action": "Chấp nhận", "note": "Ổn"},
+            {"ref": "Điều 2", "topic": "Phạt 25%", "status": "Cao", "action": "Đề xuất sửa", "note": "Trái Điều 301"},
+            {"ref": "Điều 3", "topic": "Bảo mật", "status": "Trung bình", "action": "Cần xem xét", "note": "Cần rõ quy trình"},
+            {"ref": "Điều 99", "topic": "Điều khoản bịa", "status": "Cao", "action": "Đề xuất sửa", "note": ""},
+        ],
+        # Quote bị LLM diễn đạt lệch nhẹ so với câu gốc ở Điều 2
+        "source_quote": "Nếu Bên B giao trễ hạn sẽ bị phạt vi phạm 25% tổng giá trị hợp đồng.",
+    }
+
+    verified = verify_and_reconcile_audit(mock_llm_output, sample_contract, extracted, laws)
+    v = verified["verification"]
+
+    # Tự đồng bộ đúng số đếm thực tế (2 Cao, 1 Trung bình, 1 Thấp)
+    assert verified["risk_counts"] == {"high": 2, "medium": 1, "low": 1}
+    # Bắt được Điều 4 bị bỏ sót & Điều 99 bị bịa
+    assert any("Điều 4" in m for m in v["missed_clauses"])
+    assert "Điều 99" in v["unverified_clause_refs"]
+    assert verified["clauses"][-1]["verified_in_doc"] is False
+    # Tự neo lại câu trích dẫn nguyên văn khớp bản gốc
+    assert v["quote_verified"] is True
+    assert v["quote_auto_corrected"] is True
+    assert "bàn giao trễ hạn" in verified["source_quote"]
+    # Bắt được Điều 999 không có trong kho RAG
+    assert "Điều 999" in v["ungrounded_law_articles"]
+    assert v["status"] == "needs_review"

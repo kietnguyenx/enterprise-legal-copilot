@@ -36,6 +36,40 @@ _MALICIOUS_INTENTS = [
     (r"(?i)\b(rửa\s*tiền|trốn\s*thuế\s*bất\s*hợp\s*pháp|hối\s*lộ\s*quan\s*chức)\b", "illegal_compliance"),
 ]
 
+# Từ khóa nhận diện ngữ cảnh pháp lý / hợp đồng (tránh chặn nhầm câu hỏi hợp lệ như "hợp đồng gia công phần mềm")
+_LEGAL_CONTEXT_HINT = re.compile(
+    r"(?i)\b("
+    r"hợp\s*đồng|điều\s*khoản|điều\s+\d+|khoản\s+\d+|luật|bộ\s*luật|nghị\s*định|thông\s*tư|"
+    r"pháp\s*lý|pháp\s*luật|phạt\s*vi\s*phạm|bồi\s*thường|tranh\s*chấp|khiếu\s*nại|khởi\s*kiện|"
+    r"bên\s*a|bên\s*b|chấm\s*dứt|bảo\s*mật|nda|phụ\s*lục|thẩm\s*định|rà\s*soát|đàm\s*phán|"
+    r"sở\s*hữu\s*trí\s*tuệ|bản\s*quyền|lao\s*động|sa\s*thải|bảo\s*hiểm|thuế|doanh\s*nghiệp|"
+    r"quyền\s*lợi|nghĩa\s*vụ|thanh\s*toán|nghiệm\s*thu|đặt\s*cọc|lãi\s*suất|tài\s*liệu|văn\s*bản|"
+    r"rủi\s*ro|redline|công\s*văn|biên\s*bản|contract|clause|legal|agreement|compliance|liability"
+    r")\b"
+)
+
+# Topical Guardrail (Layer 1 — Zero-Token): Chặn các yêu cầu rõ ràng nằm ngoài phạm vi Pháp luật & Hợp đồng
+_OUT_OF_SCOPE_PATTERNS = [
+    # Nấu ăn / ẩm thực
+    r"(?i)(cách\s*nấu|hướng\s*dẫn\s*nấu|nấu\s*phở|nấu\s*ăn|công\s*thức\s*(nấu|làm\s*bánh|pha\s*chế)|hôm\s*nay\s*ăn\s*gì|món\s*ngon\s*mỗi\s*ngày|how\s+to\s+cook|recipe\s+for)",
+    # Lập trình / viết code / làm game
+    r"(?i)(viết\s*code|lập\s*trình\s*(game|web|app|python|java|c\+\+)|tạo\s*game|rắn\s*săn\s*mồi|code\s*(python|java|c\+\+|javascript|html|css|sql)|debug\s*code|sửa\s*lỗi\s*code|giải\s*leetcode|thuật\s*toán\s*(sắp\s*xếp|tìm\s*kiếm)|write\s+(python|java|js|html)\s+code|build\s+a\s+game)",
+    # Bài tập toán / lý / hóa phổ thông
+    r"(?i)(giải\s*phương\s*trình|tính\s*tích\s*phân|tính\s*đạo\s*hàm|bài\s*tập\s*(toán|vật\s*lý|hóa\s*học|tiếng\s*anh)|cân\s*bằng\s*phương\s*trình\s*hóa|solve\s+this\s+(math|equation))",
+    # Giải trí / tử vi / tình cảm / thể thao / xổ số
+    r"(?i)(xem\s*bói|tử\s*vi|cung\s*hoàng\s*đạo|kể\s*chuyện\s*cười|làm\s*thơ\s*tình|viết\s*thơ\s*(tình|tặng)|cách\s*(tán\s*gái|tán\s*trai|cưa\s*đổ)|soi\s*cầu|kết\s*quả\s*xổ\s*số|tỷ\s*số\s*bóng\s*đá|lịch\s*thi\s*đấu\s*bóng\s*đá|build\s*đồ\s*tướng|tell\s+me\s+a\s+joke)",
+    # Y tế kê đơn / du lịch / thời tiết
+    r"(?i)(uống\s*thuốc\s*gì|kê\s*đơn\s*thuốc|cách\s*chữa\s*bệnh|thời\s*tiết\s*hôm\s*nay|lịch\s*trình\s*du\s*lịch|địa\s*điểm\s*du\s*lịch)",
+]
+
+OUT_OF_SCOPE_REPLY = (
+    "⚖️ **Ngoài phạm vi chuyên môn:** SecureDoc AI là trợ lý pháp lý chuyên biệt về "
+    "**thẩm định hợp đồng, phát hiện rủi ro điều khoản và đối chiếu Pháp luật Việt Nam** "
+    "(không hỗ trợ các chủ đề ngoài lề như nấu ăn, lập trình, giải bài tập hay giải trí).\n\n"
+    "Bạn có thể **tải hợp đồng lên** (`.pdf`, `.docx`, ảnh chụp) hoặc đặt câu hỏi về điều khoản, "
+    "mức phạt vi phạm, chấm dứt hợp đồng, bảo mật hay đàm phán đối tác để tôi hỗ trợ ngay!"
+)
+
 
 def check_input_guardrails(user_prompt: str) -> Tuple[bool, str, str]:
     """
@@ -75,5 +109,12 @@ def check_input_guardrails(user_prompt: str) -> Tuple[bool, str, str]:
                 rule_id,
                 "⚠️ Yêu cầu của bạn vi phạm chính sách sử dụng và chuẩn mực tuân thủ pháp lý doanh nghiệp. SecureDoc AI chỉ hỗ trợ thẩm định, rà soát rủi ro hợp đồng và phân tích văn bản pháp luật."
             )
+
+    # 3. Topical Guardrail (Zero-Token): Chặn câu hỏi ngoài phạm vi Pháp luật / Hợp đồng để tránh tốn token LLM
+    if not _LEGAL_CONTEXT_HINT.search(text):
+        for pattern in _OUT_OF_SCOPE_PATTERNS:
+            if re.search(pattern, text, flags=re.DOTALL):
+                logger.info(f"🛡️ Topical Guardrail chặn yêu cầu ngoài phạm vi: '{text[:60]}'")
+                return False, "out_of_scope", OUT_OF_SCOPE_REPLY
 
     return True, "clean", text

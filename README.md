@@ -5,9 +5,9 @@
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.110+-009688?style=flat&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Supabase%20Async-336791?style=flat&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
 [![Google Gemini](https://img.shields.io/badge/Google%20Gemini-Multimodal%20%26%20Vision%20OCR-4285F4?style=flat&logo=google&logoColor=white)](https://ai.google.dev/)
-[![Ollama](https://img.shields.io/badge/Ollama-Qwen%202.5%20Local-black?style=flat&logo=ollama&logoColor=white)](https://ollama.com/)
+[![Ollama](https://img.shields.io/badge/Ollama-Qwen%203.5%20Local-black?style=flat&logo=ollama&logoColor=white)](https://ollama.com/)
 [![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?style=flat&logo=docker&logoColor=white)](https://www.docker.com/)
-[![Tests](https://img.shields.io/badge/Pytest-37%2F37%20Passed-brightgreen?style=flat&logo=pytest&logoColor=white)](tests/)
+[![Tests](https://img.shields.io/badge/Pytest-39%2F39%20Passed-brightgreen?style=flat&logo=pytest&logoColor=white)](tests/)
 
 🌐 **Live Demo:** https://securedocai.onrender.com
 
@@ -19,8 +19,8 @@
 * **Đa định dạng & OCR:** Đọc trực tiếp PDF, Word (`.docx`), TXT, CSV, MD, **PDF scan** và **ảnh chụp hợp đồng (`.png`, `.jpg`, `.webp`)** qua Gemini Multimodal Vision OCR.
 * **Smart PII Token Vault (2 chiều):** Tự động ẩn danh SĐT, CCCD, Email, STK trước khi gửi lên Cloud LLM (không che nhầm giá trị tiền hợp đồng như `1000000000 VND`) và hỗ trợ giải mã PII gốc có kiểm soát khi xuất báo cáo đa định dạng (**`.docx`**, **`.pdf` A4**, **`.csv` Excel**, **`.md`**, **`.json`**).
 * **Vietnamese Legal Vector RAG:** Đối chiếu điều khoản với kho luật Việt Nam (*Bộ luật Dân sự 2015, Luật Thương mại 2005, Bộ luật Lao động 2019, Nghị định 13/2023/NĐ-CP, Luật SHTT*) và đề xuất **Ma trận 3 kịch bản đàm phán** (*Cứng rắn / Cân bằng Win-Win / Phòng thủ*).
-* **Hybrid LLM Router & Semantic Cache:** Kết hợp Gemini Cloud và Ollama Local (Qwen 2.5) cho dữ liệu nội bộ; bộ đệm N-gram Semantic Cache (SHA-256 toàn văn bản) giảm độ trễ câu hỏi lặp xuống `<50ms`.
-* **Xác thực, Phân quyền & Bảo mật:** Supabase Google OAuth JWT, cô lập dữ liệu theo user (`User Isolation`), phân quyền **Admin RBAC** cho bảng **AI System & RAG Inspector**, kiểm duyệt chuẩn Gmail/DNS, cùng lớp phòng thủ chống *Path Traversal, SSRF, Prompt Injection Bypass* và *Cache Poisoning*.
+* **Hybrid LLM Router & Semantic Cache:** Kết hợp Gemini Cloud và Ollama Local (Qwen 3.5) cho dữ liệu nội bộ; bộ đệm N-gram Semantic Cache (SHA-256 toàn văn bản) giảm độ trễ câu hỏi lặp xuống `<50ms`.
+* **Xác thực, Phân quyền & Bảo mật:** Supabase Google OAuth JWT, cô lập dữ liệu theo user (`User Isolation`), phân quyền **Admin RBAC** cho bảng **AI System & RAG Inspector**, kiểm duyệt chuẩn Gmail/DNS, **Topical Guardrails** khóa phạm vi pháp lý/hợp đồng (0-token block), cùng lớp phòng thủ chống *Path Traversal, SSRF, Prompt Injection Bypass* và *Cache Poisoning*.
 
 ---
 
@@ -52,7 +52,7 @@ flowchart LR
 | Thành Phần | Công Nghệ |
 | :--- | :--- |
 | **Backend & Auth** | Python 3.11+, FastAPI, Uvicorn, `slowapi`, Supabase JWT (HS256) & RBAC |
-| **AI & OCR** | Google Gemini (`google-genai`, Vision OCR), Ollama (`qwen2.5`), NumPy Vector RAG |
+| **AI & OCR** | Google Gemini (`google-genai`, Vision OCR), Ollama (`qwen3.5`), NumPy Vector RAG |
 | **Document & Export** | `pypdf`, `python-docx`, `beautifulsoup4`, `httpx` |
 | **Database** | PostgreSQL (Supabase), SQLAlchemy 2.0 Async (`asyncpg`, `aiosqlite`, `greenlet`) |
 | **Frontend & DevOps** | Vanilla HTML5/CSS3/ES6+, SSE Streaming, `pytest`, Docker & Render |
@@ -77,16 +77,17 @@ SecureDoc-AI/
 │   ├── database.py           # Async SQLAlchemy 2.0 + Auto SQLite Failover
 │   ├── email_validator.py    # Kiểm duyệt chuẩn Gmail, chặn email rác & DNS check
 │   ├── exporter.py           # Xuất báo cáo đa định dạng (.docx, .pdf A4, .csv, .md, .json)
-│   ├── guardrails.py         # Chống Prompt Injection & Bypass (\u200B, \n)
+│   ├── guardrails.py         # Prompt Injection Defense & Topical Guardrails (Zero-Token)
 │   ├── ingestion.py          # Multi-format ETL & Gemini Vision OCR
 │   ├── legal_kb.py           # Vector RAG Engine (Cosine Similarity)
 │   ├── legal_sync.py         # Cào luật từ URL kèm SSRF Protection
+│   ├── legal_verifier.py     # Clause Extractor, Multi-Query RAG & Citation Verifier (Chống sót & ảo giác)
 │   ├── models.py             # ORM Models (User, Document, AuditSession, HITLFeedback)
 │   ├── privacy.py            # Smart PII Token Vault 2 chiều
 │   └── telemetry.py          # Đo Token, Cost ($) & Latency p95
 ├── tests/
 │   ├── test_core.py          # 16 Unit & Integration Tests cốt lõi
-│   └── test_qa_bootcamp.py   # 21 Security, Edge-Case, RBAC, Email & Multi-Export Tests
+│   └── test_qa_bootcamp.py   # 23 Security, Verifier, Topical Guardrail, RBAC & Export Tests
 ├── web/                      # index.html, auth.html, app.js, style.css
 ├── docker-compose.yml
 ├── Dockerfile
@@ -138,7 +139,7 @@ docker compose up --build -d
 ## 🧪 Kiểm Thử & Đánh Giá
 
 ```bash
-# Chạy toàn bộ 37 bài kiểm thử tự động (Core + Security/QA + RBAC + Export)
+# Chạy toàn bộ 39 bài kiểm thử tự động (Core + Security/QA + Verifier + RBAC + Export)
 pytest
 
 # Chạy benchmark đánh giá RAG Recall@3, PII Vault & Guardrails
@@ -147,7 +148,7 @@ python scripts/eval_rag.py
 
 | Hạng Mục | Kết Quả |
 | :--- | :---: |
-| **Pytest Suite (Core + Security/QA + RBAC + Export)** | **37 / 37 Passed (100%)** |
+| **Pytest Suite (Core + Security/QA + Verifier + Export)** | **39 / 39 Passed (100%)** |
 | **Legal Vector RAG (`Recall@3`)** | **10 / 10 (100.0%)** |
 | **Smart PII Token Vault Accuracy** | **7 / 7 (100.0%)** |
 | **Input Guardrails Block Rate** | **5 / 5 (100.0%)** |

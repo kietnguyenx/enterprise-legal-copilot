@@ -322,7 +322,29 @@
     if (auditRiskDesc) auditRiskDesc.textContent = riskDescText;
     if (auditRiskSub) {
       const reviewed = audit.clauses_reviewed || (audit.clauses ? audit.clauses.length : 16);
-      auditRiskSub.textContent = `${reviewed} điều khoản được rà soát · cần sửa ${counts.high || 1} điều khoản trước khi ký`;
+      auditRiskSub.textContent = `${reviewed} điều khoản được rà soát · cần sửa ${counts.high || 0} điều khoản trước khi ký`;
+    }
+
+    // Legal Citation & Clause Coverage Verification Bar
+    const verifBar = document.getElementById('audit-verification-bar');
+    if (verifBar) {
+      const v = audit.verification;
+      if (v) {
+        verifBar.style.display = 'inline-flex';
+        const isOk = v.status === 'verified';
+        verifBar.style.background = isOk ? '#ECFDF5' : '#FFFBEB';
+        verifBar.style.color = isOk ? '#065F46' : '#92400E';
+        verifBar.style.border = isOk ? '1px solid #A7F3D0' : '1px solid #FDE68A';
+        const covPart = v.extracted_clauses_count > 0
+          ? `Phủ ${v.covered_clauses_count}/${v.extracted_clauses_count} điều khoản (${v.coverage_pct}%)`
+          : `Đã rà ${v.covered_clauses_count} mục`;
+        const quotePart = v.quote_verified ? 'Trích dẫn khớp bản gốc' : 'Cần rà lại trích dẫn';
+        const ragPart = `Đối chiếu ${v.rag_laws_checked || 0} điều luật RAG`;
+        verifBar.textContent = `${isOk ? '✓' : '⚠️'} ${covPart} · ${quotePart} · ${ragPart}`;
+        verifBar.title = (v.warnings && v.warnings.length) ? v.warnings.join(' | ') : 'Đã xác minh độ phủ điều khoản & căn cứ pháp luật';
+      } else {
+        verifBar.style.display = 'none';
+      }
     }
 
     // Clauses table
@@ -336,9 +358,10 @@
 
         const actionText = c.action || (tagCls === 'hi' ? 'Đề xuất sửa' : (tagCls === 'md' ? 'Cần xem xét' : 'Chấp nhận'));
         const actionCls = tagCls === 'hi' ? 's96' : 's72';
+        const badgeIcon = c.verified_in_doc === false ? ' ⚠️' : '';
         return `
           <div class="row">
-            <b>${escapeHtml(c.ref || '')}</b>
+            <b>${escapeHtml(c.ref || '')}${badgeIcon}</b>
             <span>${escapeHtml(c.topic || '')}</span>
             <span><span class="tag ${tagCls}">${escapeHtml(c.status || '')}</span></span>
             <span class="${actionCls}">${escapeHtml(actionText)}</span>
@@ -357,7 +380,7 @@
     const redline = audit.redline_diff || {};
     if (auditRedlineBody) {
       if (redline.original && redline.revised) {
-        auditRedlineBody.innerHTML = `Bên B vi phạm nghĩa vụ sẽ chịu phạt <del class="s99">${escapeHtml(redline.original)}</del> <ins class="s100">${escapeHtml(redline.revised)}</ins>.`;
+        auditRedlineBody.innerHTML = `<del class="s99">${escapeHtml(redline.original)}</del> <ins class="s100">${escapeHtml(redline.revised)}</ins>`;
       }
     }
 

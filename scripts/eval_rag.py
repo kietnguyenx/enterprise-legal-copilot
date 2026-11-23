@@ -6,6 +6,11 @@ SecureDoc AI — Automated AI & Security Evaluation Benchmark
   3. Input Guardrails Block Rate (chặn Prompt Injection & Bypass).
 """
 
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
 from src.legal_kb import get_rag_engine
 from src.privacy import redact_pii_vault
 from src.guardrails import check_input_guardrails

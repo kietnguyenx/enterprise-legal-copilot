@@ -9,6 +9,12 @@ import logging
 from dotenv import load_dotenv
 
 from src.legal_kb import get_rag_engine
+from src.legal_verifier import (
+    extract_document_clauses,
+    format_clause_checklist_for_prompt,
+    retrieve_laws_multi_query,
+    verify_and_reconcile_audit,
+)
 from src.prompts import build_chat_prompt, build_audit_prompt
 from src.llm import check_ollama_status, call_with_fallback, stream_with_fallback
 
@@ -81,26 +87,106 @@ def _safe_parse_audit_json(response_text: str) -> dict:
     }
 
 
+def _audit_missed_clauses_patch(
+    missed_clause_objs: list[dict],
+    legal_grounding_text: str,
+    model_name: str,
+) -> list[dict]:
+    """
+    Self-Healing Pass (chỉ kích hoạt khi phát hiện bỏ sót Điều khoản ở lượt 1):
+    Gửi riêng đúng nội dung các Điều khoản bị sót để bổ sung vào bảng kết quả, đảm bảo độ phủ 100%.
+    """
+    if not missed_clause_objs:
+        return []
+
+    snippets = "\n\n".join(
+        f"[{c['ref']}{(': ' + c['title']) if c.get('title') else ''}]\n{c.get('body', '')[:1500]}"
+        for c in missed_clause_objs[:8]
+    )
+    patch_prompt = f"""
+    Bạn là Chuyên gia Kiểm định Pháp lý (Self-Correction Critic Agent).
+    Lượt thẩm định trước đã bỏ sót các điều khoản dưới đây trong hợp đồng. Hãy đánh giá bổ sung ĐÚNG các điều khoản này và đối chiếu với kho luật RAG bên dưới:
+
+    CÁC ĐIỀU KHOẢN BỊ SÓT:
+    --------------------------------------------------
+    {snippets}
+    --------------------------------------------------
+
+    GROUND TRUTH LAW (RAG):
+    {legal_grounding_text}
+
+    BẮT BUỘC TRẢ VỀ DUY NHẤT 1 ĐỐI TƯỢNG JSON HỢP LỆ:
+    {{
+      "clauses": [
+        {{
+          "ref": "<Đúng tên Điều X gốc>",
+          "topic": "<Chủ đề ngắn gọn của điều khoản>",
+          "status": "<Cao / Trung bình / Thấp>",
+          "action": "<Đề xuất sửa / Cần xem xét / Chấp nhận>",
+          "note": "<Giải thích rủi ro ngắn gọn, trích đúng Điều luật RAG nếu có>"
+        }}
+      ]
+    }}
+    """
+    try:
+        patch_raw = call_with_fallback(patch_prompt, primary_model=model_name, json_mode=True)
+        parsed = _safe_parse_audit_json(patch_raw)
+        extra = parsed.get("clauses")
+        return extra if isinstance(extra, list) else []
+    except Exception as e:
+        logging.warning(f"⚠️ Self-Healing Pass bỏ qua do lỗi nhẹ: {e}")
+        return []
+
+
 def audit_document(cleaned_text: str, model_name: str = "gemini-3.5-flash") -> dict:
-    """Gọi LLM thẩm định tài liệu: Tự động phân tích động theo từng tình huống cụ thể, đối chiếu cơ sở pháp lý RAG."""
+    """
+    Pipeline 3 giai đoạn chuẩn hóa & chống ảo giác:
+    1. Clause Extractor Agent (0-token): Bóc tách chính xác danh sách Điều khoản gốc.
+    2. Clause-Level Multi-Query RAG (0-token): Truy xuất top 6 điều luật Việt Nam khớp từng Điều khoản.
+    3. Legal Auditor LLM + Verification Critic Agent (tự đồng bộ số liệu, xác minh nguyên văn, tự vá điều khoản bị sót).
+    """
     rag_engine = get_rag_engine()
-    rag_query = _build_rag_query_from_document(cleaned_text)
-    relevant_laws = rag_engine.retrieve_relevant_laws(rag_query, top_k=3)
+
+    # Giai đoạn 1: Bóc tách cấu trúc Điều khoản gốc
+    extracted_clauses = extract_document_clauses(cleaned_text)
+    clause_checklist = format_clause_checklist_for_prompt(extracted_clauses)
+
+    # Giai đoạn 2: Clause-Level Multi-Query Legal RAG (khắc phục sót luật ở hợp đồng dài)
+    relevant_laws = retrieve_laws_multi_query(rag_engine, cleaned_text, extracted_clauses, max_laws=6)
     legal_grounding_text = rag_engine.format_laws_for_prompt(relevant_laws)
-    
-    prompt = build_audit_prompt(cleaned_text, legal_grounding_text)
+
+    # Giai đoạn 3: Thẩm định chính kèm Checklist bắt buộc
+    prompt = build_audit_prompt(cleaned_text, legal_grounding_text, clause_checklist=clause_checklist)
     response_text = call_with_fallback(prompt, primary_model=model_name, json_mode=True)
-    
     data = _safe_parse_audit_json(response_text)
+
     data["retrieved_laws"] = [
         {
             "law_name": item.get("law_name"),
             "article": item.get("article"),
             "title": item.get("title"),
-            "relevance_score": item.get("relevance_score")
+            "relevance_score": item.get("relevance_score"),
         }
         for item in relevant_laws
     ]
+
+    # Giai đoạn 4: Critic Verification Agent (0-token kiểm định trích dẫn & độ phủ điều khoản)
+    data = verify_and_reconcile_audit(data, cleaned_text, extracted_clauses, relevant_laws)
+
+    # Giai đoạn 5 (Conditional Self-Healing): Chỉ gọi bổ sung nếu phát hiện sót Điều khoản thật sự
+    verif = data.get("verification") or {}
+    missed_labels = verif.get("missed_clauses") or []
+    if len(extracted_clauses) >= 2 and missed_labels:
+        missed_set = {lbl.split(":")[0].strip().lower() for lbl in missed_labels}
+        missed_objs = [c for c in extracted_clauses if c["ref"].lower() in missed_set]
+        if missed_objs:
+            logging.info(f"🔄 Self-Healing Agent phát hiện sót {len(missed_objs)} điều khoản, đang rà bổ sung...")
+            patched_clauses = _audit_missed_clauses_patch(missed_objs, legal_grounding_text, model_name=model_name)
+            if patched_clauses:
+                data.setdefault("clauses", []).extend(patched_clauses)
+                data = verify_and_reconcile_audit(data, cleaned_text, extracted_clauses, relevant_laws)
+                data["verification"]["self_healed_clauses"] = len(patched_clauses)
+
     return data
 
 

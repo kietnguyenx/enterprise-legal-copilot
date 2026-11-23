@@ -18,7 +18,8 @@ GEMINI_PRICING = {
     "gemini-3.5-flash": {"input_per_m": 0.075, "output_per_m": 0.30},
     "gemini-3.8-flash": {"input_per_m": 0.10, "output_per_m": 0.40},
     "gemini-3.5-flash-lite": {"input_per_m": 0.0375, "output_per_m": 0.15},
-    "qwen2.5:local": {"input_per_m": 0.0, "output_per_m": 0.0},  # Local Ollama = $0
+    "ollama:qwen3.5": {"input_per_m": 0.0, "output_per_m": 0.0},  # Local Ollama = $0
+    "qwen3.5:local": {"input_per_m": 0.0, "output_per_m": 0.0},
 }
 
 

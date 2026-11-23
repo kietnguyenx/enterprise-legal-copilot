@@ -14,7 +14,7 @@ MODELS = [
     {"id": "gemini-3.5-flash", "label": "Gemini 3.5 Flash"},
     {"id": "gemini-3.8-flash", "label": "Gemini 3.8 Flash"},
     {"id": "gemini-3.5-flash-lite", "label": "Gemini 3.5 Flash Lite"},
-    {"id": "ollama:qwen2.5", "label": "Qwen 2.5 (Local On-Prem)"},
+    {"id": "ollama:qwen3.5", "label": "Qwen 3.5"},
 ]
 MODEL_IDS = {m["id"] for m in MODELS}
 
