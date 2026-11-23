@@ -291,14 +291,27 @@
     }
 
     // Executive summary & counts
+    const riskGridEl = document.querySelector('.view-audit .s74');
+    const summaryHeadingEl = auditExecSummary?.parentElement?.querySelector('.h');
+    const hasAuditData = Boolean(s.audit && (s.audit.risk_score !== undefined || (s.audit.clauses && s.audit.clauses.length)));
+    if (riskGridEl) riskGridEl.style.display = hasAuditData ? '' : 'none';
+    if (summaryHeadingEl) summaryHeadingEl.textContent = hasAuditData ? 'Executive Summary' : 'SecureDoc AI';
+
     if (auditExecSummary) {
-      auditExecSummary.innerHTML = audit.executive_summary || (audit.summary ? audit.summary.join('<br>') : 'Hợp đồng thuê văn phòng 24 tháng. Phần lớn điều khoản tiêu chuẩn, nhưng có 2 điều khoản bất lợi nghiêm trọng cho Bên B.');
+      if (hasAuditData) {
+        auditExecSummary.innerHTML = audit.executive_summary || (audit.summary ? audit.summary.join('<br>') : '');
+      } else {
+        const firstAi = (s.messages || []).find(m => m.role === 'assistant');
+        auditExecSummary.innerHTML = firstAi ? formatMarkdown(firstAi.content || '') : '';
+      }
     }
     if (countHigh) countHigh.textContent = counts.high ?? 0;
     if (countMed) countMed.textContent = counts.medium ?? 0;
     if (countLow) countLow.textContent = counts.low ?? 0;
     if (auditRecText) {
-      auditRecText.innerHTML = audit.recommendation || (audit.high_risk ? audit.high_risk.desc : 'Đề xuất rút ngắn mức phạt và bổ sung quyền khắc phục trong 30 ngày.');
+      auditRecText.innerHTML = hasAuditData
+        ? (audit.recommendation || (audit.high_risk ? audit.high_risk.desc : ''))
+        : '';
     }
 
     // Live Audit Canvas: Gauge circle
@@ -583,15 +596,22 @@
     if (auditPiiCard) auditPiiCard.style.display = 'flex';
     if (auditPiiSummary) auditPiiSummary.textContent = 'PII Guard đang bật';
     if (auditPiiTokens) auditPiiTokens.innerHTML = '<span class="pii">[ĐÃ BẢO VỆ]</span>';
+    const riskGridEl = document.querySelector('.view-audit .s74');
+    const summaryHeadingEl = auditExecSummary?.parentElement?.querySelector('.h');
+    if (riskGridEl) riskGridEl.style.display = 'none';
+    if (summaryHeadingEl) summaryHeadingEl.textContent = 'SecureDoc AI';
     if (auditExecSummary) auditExecSummary.textContent = '';
     if (auditRecText) auditRecText.textContent = '';
     if (auditCursor) auditCursor.style.display = 'inline-block';
     if (auditExtraMessages) auditExtraMessages.innerHTML = '';
 
+    let rawStreamText = '';
     await streamAiChat(null, text, (chunk) => {
-      if (auditExecSummary) auditExecSummary.textContent += chunk;
+      rawStreamText += chunk;
+      if (auditExecSummary) auditExecSummary.innerHTML = formatMarkdown(rawStreamText);
     }, () => {
       if (auditCursor) auditCursor.style.display = 'none';
+      if (auditExecSummary) auditExecSummary.innerHTML = formatMarkdown(rawStreamText);
       loadSessions();
     });
   }

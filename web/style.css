@@ -2194,20 +2194,28 @@ body.resizing-col * {
     gap: 6px;
   }
 
-  /* Trang chủ gọn vừa khít 1 màn hình điện thoại: Hero ở giữa-trên, 3 nút ngang + khung chat ở dưới */
+  /* Trang chủ cân bằng chính giữa màn hình iPhone & cuộn mượt tự nhiên (CHỈ MOBILE) */
   .view-home .s24 {
-    padding: 12px 14px 16px !important;
-    min-height: 100dvh;
+    padding: calc(10px + env(safe-area-inset-top)) 14px calc(18px + env(safe-area-inset-bottom)) !important;
+    min-height: 100dvh !important;
     display: flex !important;
     flex-direction: column !important;
+    justify-content: space-between !important;
+    box-sizing: border-box !important;
   }
   .view-home .s25 {
+    display: grid !important;
+    grid-template-columns: 40px 1fr auto !important;
+    align-items: center !important;
     padding: 4px 0 8px !important;
-    gap: 8px;
-    flex-wrap: nowrap;
+    gap: 8px !important;
+    width: 100% !important;
+  }
+  .view-home .s25 > div {
+    justify-self: center !important;
   }
   .view-home .s26 {
-    padding: 6px 10px !important;
+    padding: 6px 11px !important;
     font-size: 12.5px !important;
     white-space: nowrap;
   }
@@ -2215,18 +2223,22 @@ body.resizing-col * {
     flex: 1 !important;
     display: flex !important;
     flex-direction: column !important;
-    justify-content: flex-end !important;
-    padding: 6px 0 6px !important;
-    gap: 10px !important;
+    justify-content: center !important;
+    align-items: center !important;
+    margin: auto 0 !important;
+    padding: 12px 0 16px !important;
+    gap: 14px !important;
+    width: 100% !important;
   }
   .view-home .s28 {
     order: 1 !important;
-    flex: 1 !important;
+    flex: 0 0 auto !important;
     display: flex !important;
     flex-direction: column !important;
     align-items: center !important;
     justify-content: center !important;
-    margin-bottom: 6px !important;
+    margin-bottom: 4px !important;
+    width: 100% !important;
   }
   .view-home .s29 {
     width: 60px !important;
@@ -2673,25 +2685,42 @@ body.resizing-col * {
   border-top: 1px solid rgba(255, 255, 255, 0.16);
 }
 
-/* ==================== iOS SAFARI EDGE-TO-EDGE POLISH ==================== */
+/* ==================== iOS SAFARI EDGE-TO-EDGE & NATIVE TOUCH SCROLL FIX ==================== */
 @media (max-width: 900px) {
   html, body {
     background: #F4F7FF !important;
+    height: auto !important;
+    min-height: 100dvh !important;
+    max-height: none !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch;
   }
+  .view-home,
+  .view-audit,
+  .view-home > div,
+  .view-audit > div,
   .view-home .s1,
-  .view-home .s2 {
+  .view-home .s2,
+  .view-audit .s55,
+  .view-audit .s56 {
     background: #F4F7FF !important;
     height: auto !important;
     min-height: 100dvh !important;
+    max-height: none !important;
     box-shadow: none !important;
     border-radius: 0 !important;
     overflow: visible !important;
+  }
+  .view-audit .s64 {
+    padding-bottom: 148px !important;
+  }
+  .view-audit .s86 {
+    padding-bottom: 48px !important;
   }
   .view-home .s24 {
     background: #F4F7FF !important;
     box-shadow: none !important;
     border-radius: 0 !important;
-    padding-top: calc(10px + env(safe-area-inset-top)) !important;
-    padding-bottom: calc(24px + env(safe-area-inset-bottom)) !important;
   }
 }
