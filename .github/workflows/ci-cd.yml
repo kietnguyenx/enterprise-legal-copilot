@@ -73,7 +73,7 @@ jobs:
           GEMINI_API_KEY: "dummy-key-for-automated-ci"
           ENVIRONMENT: "test"
         run: |
-          pytest tests/test_core.py -v --tb=short
+          pytest -v --tb=short
 
   # ========================================================
   # 3. Containerization Build Verification (Docker)

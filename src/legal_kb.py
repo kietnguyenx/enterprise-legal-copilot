@@ -178,14 +178,36 @@ class LegalRAGEngine:
                 pass
         self._ensure_loaded()
 
+    def _lexical_fallback_search(self, query: str, top_k: int = 3) -> list[dict]:
+        """Fallback tìm kiếm từ khóa (BM25-lite) khi Embedding API ngoại tuyến, hết quota hoặc chạy trên CI."""
+        import re
+        q_tokens = {w for w in re.findall(r"\w+", query.lower()) if len(w) > 1}
+        if not q_tokens:
+            return []
+        scored = []
+        for doc in self.documents:
+            corpus = f"{doc.get('law_name', '')} {doc.get('article', '')} {doc.get('title', '')} {doc.get('content', '')}".lower()
+            doc_tokens = set(re.findall(r"\w+", corpus))
+            overlap = len(q_tokens & doc_tokens)
+            if overlap > 0:
+                score = round(min(0.95, 0.45 + overlap / max(len(q_tokens), 4)), 3)
+                d_copy = dict(doc)
+                d_copy["relevance_score"] = score
+                scored.append(d_copy)
+        scored.sort(key=lambda x: x["relevance_score"], reverse=True)
+        return scored[:top_k]
+
     def retrieve_relevant_laws(self, query: str, top_k: int = 3, min_score: float = 0.45) -> list[dict]:
-        """Truy xuất các điều luật tương quan nhất dựa trên Cosine Similarity."""
-        if not self.documents or self.embeddings is None or len(self.embeddings) == 0:
+        """Truy xuất các điều luật tương quan nhất dựa trên Cosine Similarity (kèm Lexical Fallback khi offline/CI)."""
+        if not self.documents:
             return []
 
         clean_query = query.strip()
         if not clean_query:
             return []
+
+        if self.embeddings is None or len(self.embeddings) == 0:
+            return self._lexical_fallback_search(clean_query, top_k=top_k)
 
         # Rút gọn truy vấn nếu quá dài
         query_snippet = clean_query[:1000]
@@ -199,10 +221,10 @@ class LegalRAGEngine:
             elif hasattr(res, "embedding") and res.embedding:
                 query_vec = np.array(res.embedding.values, dtype=np.float32)
             else:
-                return []
+                return self._lexical_fallback_search(clean_query, top_k=top_k)
         except Exception as e:
-            logging.error(f"Lỗi khi embed truy vấn tìm kiếm luật: {e}")
-            return []
+            logging.warning(f"Embedding API không khả dụng ({e}), chuyển sang Lexical Fallback Search...")
+            return self._lexical_fallback_search(clean_query, top_k=top_k)
 
         scores = _cosine_similarity(query_vec, self.embeddings)
         top_indices = np.argsort(scores)[::-1][:top_k]
