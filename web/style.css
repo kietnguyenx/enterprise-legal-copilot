@@ -2194,13 +2194,12 @@ body.resizing-col * {
     gap: 6px;
   }
 
-  /* Trang chủ cân bằng chính giữa màn hình iPhone & cuộn mượt tự nhiên (CHỈ MOBILE) */
+  /* Trang chủ chuẩn bố cục ChatGPT Mobile: Lời chào căn giữa-dưới, 3 nút ngang + khung chat hạ thấp vừa tầm ngón tay */
   .view-home .s24 {
-    padding: calc(10px + env(safe-area-inset-top)) 14px calc(18px + env(safe-area-inset-bottom)) !important;
+    padding: calc(12px + env(safe-area-inset-top)) 14px calc(16px + env(safe-area-inset-bottom)) !important;
     min-height: 100dvh !important;
     display: flex !important;
     flex-direction: column !important;
-    justify-content: space-between !important;
     box-sizing: border-box !important;
   }
   .view-home .s25 {
@@ -2221,14 +2220,15 @@ body.resizing-col * {
   }
   .view-home .s27 {
     flex: 1 !important;
+    min-height: calc(100dvh - 88px) !important;
     display: flex !important;
     flex-direction: column !important;
-    justify-content: center !important;
+    justify-content: flex-end !important;
     align-items: center !important;
-    margin: auto 0 !important;
-    padding: 12px 0 16px !important;
-    gap: 14px !important;
+    padding: 16px 0 10px !important;
+    gap: 12px !important;
     width: 100% !important;
+    box-sizing: border-box !important;
   }
   .view-home .s28 {
     order: 1 !important;
@@ -2237,7 +2237,9 @@ body.resizing-col * {
     flex-direction: column !important;
     align-items: center !important;
     justify-content: center !important;
-    margin-bottom: 4px !important;
+    margin-top: auto !important;
+    margin-bottom: auto !important;
+    padding-top: 28px !important;
     width: 100% !important;
   }
   .view-home .s29 {
